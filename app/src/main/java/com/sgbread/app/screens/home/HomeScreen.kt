@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -30,7 +31,8 @@ import com.sgbread.app.data.Modules
 import com.sgbread.app.progress.ProgressViewModel
 import com.sgbread.app.ui.theme.CorrectGreen
 import com.sgbread.app.ui.theme.CreamWhite
-import com.sgbread.app.ui.theme.SkyBlue
+import com.sgbread.app.ui.theme.RiceGreenDark
+import com.sgbread.app.ui.theme.SkyBlueLight
 
 /** A tappable region on the home artwork, expressed as fractions (0f..1f) of the image size. */
 private data class HotSpot(val left: Float, val top: Float, val right: Float, val bottom: Float)
@@ -57,18 +59,19 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(SkyBlue),
+            // Matches the artwork's own sky-to-field horizon (~50%) so any
+            // letterboxed margin on wide screens blends into the scene
+            // instead of showing a flat color band or a duplicated crop.
+            .background(
+                Brush.verticalGradient(
+                    0.0f to SkyBlueLight,
+                    0.49f to SkyBlueLight,
+                    0.51f to RiceGreenDark,
+                    1.0f to RiceGreenDark
+                )
+            ),
         contentAlignment = Alignment.Center
     ) {
-        // Full-bleed, cropped backdrop so the screen is never letterboxed on
-        // aspect ratios wider or narrower than the artwork itself.
-        Image(
-            painter = homeArt,
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val screenAspect = maxWidth / maxHeight
             val imageWidth: Dp
