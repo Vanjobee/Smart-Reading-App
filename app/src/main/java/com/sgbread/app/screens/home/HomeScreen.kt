@@ -28,7 +28,6 @@ import com.sgbread.app.R
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.data.Modules
 import com.sgbread.app.progress.ProgressViewModel
-import com.sgbread.app.ui.components.PlantProgressBar
 import com.sgbread.app.ui.theme.CorrectGreen
 import com.sgbread.app.ui.theme.CreamWhite
 import com.sgbread.app.ui.theme.SkyBlue
@@ -41,7 +40,6 @@ private val PHONICS_SPOT = HotSpot(0.250f, 0.545f, 0.385f, 0.790f)
 private val BLENDING_SPOT = HotSpot(0.415f, 0.545f, 0.550f, 0.790f)
 private val DIGRAPHS_SPOT = HotSpot(0.575f, 0.545f, 0.710f, 0.790f)
 private val SPEAKER_SPOT = HotSpot(0.010f, 0.015f, 0.085f, 0.125f)
-private val HOME_SPOT = HotSpot(0.020f, 0.840f, 0.220f, 0.955f)
 private val PROFILE_SPOT = HotSpot(0.775f, 0.840f, 0.975f, 0.955f)
 
 private const val IMAGE_ASPECT = 1536f / 1024f
@@ -50,7 +48,8 @@ private const val IMAGE_ASPECT = 1536f / 1024f
 fun HomeScreen(
     progressViewModel: ProgressViewModel,
     audio: AudioManager,
-    onModuleSelected: (String) -> Unit
+    onModuleSelected: (String) -> Unit,
+    onProfileSelected: () -> Unit
 ) {
     val progress by progressViewModel.state.collectAsStateWithLifecycle()
     val homeArt: Painter = painterResource(R.drawable.home)
@@ -61,6 +60,15 @@ fun HomeScreen(
             .background(SkyBlue),
         contentAlignment = Alignment.Center
     ) {
+        // Full-bleed, cropped backdrop so the screen is never letterboxed on
+        // aspect ratios wider or narrower than the artwork itself.
+        Image(
+            painter = homeArt,
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val screenAspect = maxWidth / maxHeight
             val imageWidth: Dp
@@ -120,17 +128,7 @@ fun HomeScreen(
                         audio.speak("Welcome to S G B Read! Grow your reading on the farm. Tap Letter, Phonics, Blending, or Digraphs to start.", rate = 0.9f)
                     }
                 )
-                Box(modifier = hotspotModifier(HOME_SPOT) { /* already home */ })
-                Box(modifier = hotspotModifier(PROFILE_SPOT) { /* profile coming soon */ })
-
-                PlantProgressBar(
-                    fraction = progress.fraction,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .offset(y = imageHeight * 0.32f)
-                        .background(CreamWhite.copy(alpha = 0.85f))
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                )
+                Box(modifier = hotspotModifier(PROFILE_SPOT, onProfileSelected))
             }
         }
     }

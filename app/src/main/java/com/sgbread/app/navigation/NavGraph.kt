@@ -10,6 +10,7 @@ import com.sgbread.app.data.Modules
 import com.sgbread.app.progress.ProgressViewModel
 import com.sgbread.app.screens.home.HomeScreen
 import com.sgbread.app.screens.home.ModuleScreen
+import com.sgbread.app.screens.home.ProfileScreen
 import com.sgbread.app.screens.module1.LetterBasketScreen
 import com.sgbread.app.screens.module1.MatchCaseScreen
 import com.sgbread.app.screens.module1.TraceLetterScreen
@@ -26,6 +27,7 @@ import com.sgbread.app.screens.module4.PictureWordMatchScreen
 object Routes {
     const val HOME = "home"
     const val MODULE = "module/{moduleId}"
+    const val PROFILE = "profile"
     fun module(moduleId: String) = "module/$moduleId"
 }
 
@@ -41,7 +43,15 @@ fun SgbNavGraph(
             HomeScreen(
                 progressViewModel = progressViewModel,
                 audio = audio,
-                onModuleSelected = { moduleId -> navController.navigate(Routes.module(moduleId)) }
+                onModuleSelected = { moduleId -> navController.navigate(Routes.module(moduleId)) },
+                onProfileSelected = { navController.navigate(Routes.PROFILE) }
+            )
+        }
+
+        composable(Routes.PROFILE) {
+            ProfileScreen(
+                progressViewModel = progressViewModel,
+                onBack = { navController.popBackStack() }
             )
         }
 
