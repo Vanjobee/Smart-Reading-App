@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sky_blue">#8ECFEE</color>
+    <color name="rice_green">#7BB661</color>
+    <color name="soil_brown">#8B5E34</color>
+    <color name="sun_yellow">#FFC94A</color>
+    <color name="launcher_bg">#7BB661</color>
+</resources>
