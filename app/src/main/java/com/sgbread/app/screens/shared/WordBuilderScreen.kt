@@ -1,5 +1,7 @@
 package com.sgbread.app.screens.shared
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -118,11 +120,11 @@ fun WordBuilderScreen(
         feedback = feedback
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Word ${roundIndex + 1} of ${rounds.size}", style = MaterialTheme.typography.bodyMedium)
-            FarmIcon(round.icon, modifier = Modifier.size(120.dp))
+            FarmIcon(round.icon, modifier = Modifier.size(90.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),

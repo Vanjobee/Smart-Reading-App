@@ -1,6 +1,8 @@
 package com.sgbread.app.screens.module1
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,7 +93,7 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         feedback = feedback
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding).padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Match each pair", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)

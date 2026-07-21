@@ -103,10 +103,10 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
 
             Text("Letters", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
+                columns = GridCells.Fixed(6),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                modifier = Modifier.fillMaxWidth().weight(1f, fill = false).padding(top = 12.dp)
             ) {
                 items(pool.size) { i ->
                     LetterChip(

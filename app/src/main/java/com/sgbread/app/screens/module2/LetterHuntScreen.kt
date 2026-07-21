@@ -109,10 +109,10 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
                 modifier = Modifier.padding(vertical = 12.dp)
             )
             LazyVerticalGrid(
-                columns = GridCells.Fixed(5),
+                columns = GridCells.Fixed(8),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
             ) {
                 items(grid.size) { i ->
                     val cell = grid[i]
