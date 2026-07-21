@@ -2,9 +2,9 @@ package com.sgbread.app.screens.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,10 +28,10 @@ fun ModuleScreen(
 
     ActivityScaffold(title = module.title, onBack = onBack, onReplayInstructions = null) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Column(
+            Row(
                 modifier = Modifier.fillMaxSize().padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 module.activities.forEach { activity ->
                     FarmTile(
@@ -40,7 +40,7 @@ fun ModuleScreen(
                         subtitle = activity.description,
                         completed = activity.id in progress.completedActivityIds,
                         onClick = { onActivitySelected(activity.route) },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     )
                 }
             }

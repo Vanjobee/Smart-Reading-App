@@ -1,73 +1,136 @@
 package com.sgbread.app.screens.home
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sgbread.app.R
+import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.data.Modules
 import com.sgbread.app.progress.ProgressViewModel
-import com.sgbread.app.ui.components.FarmBackground
-import com.sgbread.app.ui.components.FarmTile
 import com.sgbread.app.ui.components.PlantProgressBar
+import com.sgbread.app.ui.theme.CorrectGreen
+import com.sgbread.app.ui.theme.CreamWhite
+import com.sgbread.app.ui.theme.SkyBlue
+
+/** A tappable region on the home artwork, expressed as fractions (0f..1f) of the image size. */
+private data class HotSpot(val left: Float, val top: Float, val right: Float, val bottom: Float)
+
+private val LETTER_SPOT = HotSpot(0.090f, 0.545f, 0.225f, 0.790f)
+private val PHONICS_SPOT = HotSpot(0.250f, 0.545f, 0.385f, 0.790f)
+private val BLENDING_SPOT = HotSpot(0.415f, 0.545f, 0.550f, 0.790f)
+private val DIGRAPHS_SPOT = HotSpot(0.575f, 0.545f, 0.710f, 0.790f)
+private val SPEAKER_SPOT = HotSpot(0.010f, 0.015f, 0.085f, 0.125f)
+private val HOME_SPOT = HotSpot(0.020f, 0.840f, 0.220f, 0.955f)
+private val PROFILE_SPOT = HotSpot(0.775f, 0.840f, 0.975f, 0.955f)
+
+private const val IMAGE_ASPECT = 1536f / 1024f
 
 @Composable
 fun HomeScreen(
     progressViewModel: ProgressViewModel,
+    audio: AudioManager,
     onModuleSelected: (String) -> Unit
 ) {
     val progress by progressViewModel.state.collectAsStateWithLifecycle()
+    val homeArt: Painter = painterResource(R.drawable.home)
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        FarmBackground()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "SGB-READ",
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                "Grow your reading on the farm!",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
-            )
-            PlantProgressBar(fraction = progress.fraction, modifier = Modifier.padding(vertical = 16.dp))
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(SkyBlue),
+        contentAlignment = Alignment.Center
+    ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val screenAspect = maxWidth / maxHeight
+            val imageWidth: Dp
+            val imageHeight: Dp
+            if (screenAspect > IMAGE_ASPECT) {
+                imageHeight = maxHeight
+                imageWidth = maxHeight * IMAGE_ASPECT
+            } else {
+                imageWidth = maxWidth
+                imageHeight = maxWidth / IMAGE_ASPECT
+            }
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth().height(420.dp)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(imageWidth, imageHeight)
             ) {
-                items(Modules.all) { module ->
-                    FarmTile(
-                        icon = module.icon,
-                        title = "Module ${module.number}",
-                        subtitle = module.title,
-                        completed = progress.isModuleComplete(module.id),
-                        onClick = { onModuleSelected(module.id) }
-                    )
+                Image(
+                    painter = homeArt,
+                    contentDescription = "SGB-READ farm home screen",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.FillBounds
+                )
+
+                fun hotspotModifier(spot: HotSpot, onClick: () -> Unit): Modifier = Modifier
+                    .offset(x = imageWidth * spot.left, y = imageHeight * spot.top)
+                    .size(imageWidth * (spot.right - spot.left), imageHeight * (spot.bottom - spot.top))
+                    .clickable(onClick = onClick)
+
+                Modules.all.forEachIndexed { index, module ->
+                    val spot = when (index) {
+                        0 -> LETTER_SPOT
+                        1 -> PHONICS_SPOT
+                        2 -> BLENDING_SPOT
+                        else -> DIGRAPHS_SPOT
+                    }
+                    Box(modifier = hotspotModifier(spot) { onModuleSelected(module.id) })
+                    if (progress.isModuleComplete(module.id)) {
+                        Box(
+                            modifier = Modifier
+                                .offset(
+                                    x = imageWidth * spot.right - 18.dp,
+                                    y = imageHeight * spot.top - 6.dp
+                                )
+                                .size(26.dp)
+                                .clip(CircleShape)
+                                .background(CorrectGreen),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.Check, contentDescription = "Completed", tint = CreamWhite, modifier = Modifier.size(16.dp))
+                        }
+                    }
                 }
+
+                Box(
+                    modifier = hotspotModifier(SPEAKER_SPOT) {
+                        audio.speak("Welcome to S G B Read! Grow your reading on the farm. Tap Letter, Phonics, Blending, or Digraphs to start.", rate = 0.9f)
+                    }
+                )
+                Box(modifier = hotspotModifier(HOME_SPOT) { /* already home */ })
+                Box(modifier = hotspotModifier(PROFILE_SPOT) { /* profile coming soon */ })
+
+                PlantProgressBar(
+                    fraction = progress.fraction,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = imageHeight * 0.32f)
+                        .background(CreamWhite.copy(alpha = 0.85f))
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                )
             }
         }
     }

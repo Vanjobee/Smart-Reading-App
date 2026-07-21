@@ -40,6 +40,7 @@ fun SgbNavGraph(
         composable(Routes.HOME) {
             HomeScreen(
                 progressViewModel = progressViewModel,
+                audio = audio,
                 onModuleSelected = { moduleId -> navController.navigate(Routes.module(moduleId)) }
             )
         }
