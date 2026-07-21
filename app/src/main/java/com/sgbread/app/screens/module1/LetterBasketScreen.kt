@@ -2,6 +2,7 @@ package com.sgbread.app.screens.module1
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -106,7 +107,8 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                 columns = GridCells.Fixed(6),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth().weight(1f, fill = false).padding(top = 12.dp)
+                contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp),
+                modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
             ) {
                 items(pool.size) { i ->
                     LetterChip(

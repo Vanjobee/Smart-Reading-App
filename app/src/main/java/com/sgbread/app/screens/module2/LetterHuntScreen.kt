@@ -2,6 +2,7 @@ package com.sgbread.app.screens.module2
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -112,6 +113,7 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
                 columns = GridCells.Fixed(8),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 24.dp),
                 modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
             ) {
                 items(grid.size) { i ->

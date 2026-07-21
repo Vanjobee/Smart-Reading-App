@@ -2,6 +2,7 @@ package com.sgbread.app.screens.module4
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -103,6 +104,7 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                 columns = GridCells.Fixed(5),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(bottom = 24.dp),
                 modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
             ) {
                 items(board.size) { i ->

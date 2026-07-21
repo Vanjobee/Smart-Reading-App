@@ -71,6 +71,9 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
             } else {
                 stepIndex += 1
             }
+        } else if (feedback is AnswerFeedback.Incorrect) {
+            delay(1000)
+            feedback = AnswerFeedback.None
         }
     }
 
@@ -105,13 +108,30 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                     modifier = Modifier
                         .fillMaxSize()
                         .pointerInput(stepIndex) {
+                            val minDim = minOf(size.width, size.height).toFloat()
                             detectDragGestures(
                                 onDragStart = { offset -> pathPoints = listOf(offset) },
                                 onDrag = { change, _ -> pathPoints = pathPoints + change.position },
                                 onDragEnd = {
-                                    if (pathPoints.size > 6 && feedback is AnswerFeedback.None) {
-                                        audio.playSfx(Sfx.CORRECT)
-                                        feedback = AnswerFeedback.Correct("Great tracing!")
+                                    val points = pathPoints
+                                    if (feedback is AnswerFeedback.None && points.size > 6) {
+                                        var traveled = 0f
+                                        for (i in 1 until points.size) {
+                                            traveled += (points[i] - points[i - 1]).getDistance()
+                                        }
+                                        val spanX = points.maxOf { it.x } - points.minOf { it.x }
+                                        val spanY = points.maxOf { it.y } - points.minOf { it.y }
+                                        val coversLetter = traveled >= minDim * 0.8f &&
+                                            spanX >= minDim * 0.25f &&
+                                            spanY >= minDim * 0.3f
+                                        if (coversLetter) {
+                                            audio.playSfx(Sfx.CORRECT)
+                                            feedback = AnswerFeedback.Correct("Great tracing!")
+                                        } else {
+                                            audio.playSfx(Sfx.INCORRECT)
+                                            feedback = AnswerFeedback.Incorrect("Trace the whole letter!")
+                                            pathPoints = emptyList()
+                                        }
                                     }
                                 }
                             )
