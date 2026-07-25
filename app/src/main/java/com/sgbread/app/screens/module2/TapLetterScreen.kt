@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -42,6 +42,7 @@ import kotlinx.coroutines.delay
 
 // Module 2 uses larger touch targets/text than the shared activity defaults.
 private const val M2_SCALE = 1.25f
+private const val CHOICE_COUNT = 6
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -56,7 +57,14 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
 
     val round = rounds[roundIndex]
     val choices = remember(roundIndex) {
-        (listOf(round.letter) + LettersBank.phonicsItems.filter { it != round }.map { it.letter }.shuffled().take(1)).shuffled()
+        (listOf(round.letter) + LettersBank.phonicsItems
+            .map { it.letter }
+            .filter { it != round.letter }
+            .distinct()
+            .shuffled()
+            .take(CHOICE_COUNT - 1))
+            .distinct()
+            .shuffled()
     }
 
     fun speakPrompt() = audio.playWord(round.word, rate = 0.85f)
@@ -146,15 +154,16 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                         )
                     },
                     choices = {
-                        Row(
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(metrics.gridSpacing),
-                            verticalAlignment = Alignment.CenterVertically
+                            horizontalArrangement = Arrangement.spacedBy(metrics.gridSpacing, Alignment.CenterHorizontally),
+                            verticalArrangement = Arrangement.spacedBy(metrics.gridSpacing),
+                            maxItemsInEachRow = 3
                         ) {
                             choices.forEach { c ->
                                 LetterChip(
                                     letter = c,
-                                    size = metrics.choiceChipSize,
+                                    size = if (metrics.compactWidth || metrics.compactHeight) metrics.chipSize else metrics.choiceChipSize,
                                     state = if (wrongLetter == c) ChoiceState.WRONG else ChoiceState.IDLE,
                                     onClick = { onPick(c) }
                                 )

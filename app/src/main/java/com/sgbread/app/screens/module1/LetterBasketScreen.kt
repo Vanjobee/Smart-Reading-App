@@ -199,7 +199,7 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                 lockInput = true
                 wordPopupVisible = true
                 wordSoundFinished = false
-                audio.playWord(target.word, rate = 0.9f, onComplete = {
+                audio.speakLetterNameThenWord(target.letter, target.word, rate = 0.9f, onComplete = {
                     wordSoundFinished = true
                 })
             }
