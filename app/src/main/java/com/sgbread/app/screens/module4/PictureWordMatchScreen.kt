@@ -73,8 +73,10 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
         wrongWord = null
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Tap the picture!")
-            delay(900)
+            audio.playRecordedPrompt("Tap the picture!") {
+                speakWord()
+            }
+            return@LaunchedEffect
         }
         speakWord()
     }
@@ -94,7 +96,7 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
 
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
-            delay(900)
+            delay(250)
             audio.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
@@ -104,7 +106,7 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
     LaunchedEffect(feedback) {
         val current = feedback
         if (current is AnswerFeedback.Correct) {
-            delay(1200)
+            delay(850)
             while (audio.isPlaying.value) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
@@ -114,7 +116,7 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
                 roundIndex += 1
             }
         } else if (current is AnswerFeedback.Incorrect) {
-            delay(900)
+            delay(750)
             feedback = AnswerFeedback.None
         }
     }

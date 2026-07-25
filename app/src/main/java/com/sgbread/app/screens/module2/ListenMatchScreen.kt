@@ -57,6 +57,8 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongPick by remember { mutableStateOf<Int?>(null) }
+    var correctPick by remember { mutableStateOf<Int?>(null) }
+    var roundLocked by remember { mutableStateOf(false) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
@@ -68,13 +70,18 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
     fun speakPrompt() = audio.speakThenLetterSound("Listen.", round.letter, rate = 0.85f)
     LaunchedEffect(roundIndex) {
         wrongPick = null
+        correctPick = null
+        roundLocked = false
         speakPrompt()
     }
 
     fun onPick(index: Int) {
+        if (roundLocked) return
         val picked = choices[index]
         audio.stopPlayback()
         if (picked.letter == round.letter) {
+            correctPick = index
+            roundLocked = true
             audio.speakLetterThenWord(round.letter, round.word, rate = 0.9f) {
                 pendingPraise = true
             }
@@ -87,7 +94,7 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
 
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
-            delay(900)
+            delay(250)
             audio.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
@@ -97,7 +104,7 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
     LaunchedEffect(feedback) {
         val current = feedback
         if (current is AnswerFeedback.Correct) {
-            delay(1200)
+            delay(850)
             while (audio.isPlaying.value) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
@@ -107,8 +114,9 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                 roundIndex += 1
             }
         } else if (current is AnswerFeedback.Incorrect) {
-            delay(1000)
+            delay(750)
             feedback = AnswerFeedback.None
+            wrongPick = null
         }
     }
 
@@ -171,9 +179,14 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                             choices.forEachIndexed { i, item ->
                                 PictureChoiceCard(
                                     image = item.image,
-                                    label = null,
+                                    label = item.word,
                                     imageSize = metrics.choiceImageSize,
-                                    state = if (wrongPick == i) ChoiceState.WRONG else ChoiceState.IDLE,
+                                    state = when {
+                                        correctPick == i -> ChoiceState.CORRECT
+                                        wrongPick == i -> ChoiceState.WRONG
+                                        else -> ChoiceState.IDLE
+                                    },
+                                    enabled = !roundLocked,
                                     onClick = { onPick(i) },
                                     modifier = Modifier.weight(1f)
                                 )

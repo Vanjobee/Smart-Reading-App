@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -130,6 +131,7 @@ private fun ModuleScreenContent(
                 .align(Alignment.TopStart)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(12.dp)
+                .shadow(8.dp, CircleShape)
                 .clip(CircleShape)
                 .background(CreamWhite.copy(alpha = 0.88f))
         ) {
@@ -142,6 +144,7 @@ private fun ModuleScreenContent(
                 .align(Alignment.TopEnd)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(12.dp)
+                .shadow(8.dp, CircleShape)
                 .clip(CircleShape)
                 .background(CreamWhite.copy(alpha = 0.88f))
         ) {

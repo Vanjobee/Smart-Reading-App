@@ -229,7 +229,7 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
 
     LaunchedEffect(feedback) {
         if (feedback is AnswerFeedback.Incorrect) {
-            delay(900)
+            delay(750)
             feedback = AnswerFeedback.None
             lockInput = false
             lastWrongChoiceId = null

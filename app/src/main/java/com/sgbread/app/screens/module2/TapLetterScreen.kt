@@ -74,8 +74,10 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         wrongLetter = null
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("What letter does this picture begin with?")
-            delay(900)
+            audio.playRecordedPrompt("What letter does this picture begin with?") {
+                speakPrompt()
+            }
+            return@LaunchedEffect
         }
         speakPrompt()
     }
@@ -96,7 +98,7 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
 
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
-            delay(900)
+            delay(250)
             audio.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
@@ -106,7 +108,7 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     LaunchedEffect(feedback) {
         val current = feedback
         if (current is AnswerFeedback.Correct) {
-            delay(1200)
+            delay(850)
             while (audio.isPlaying.value) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
@@ -116,7 +118,7 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                 roundIndex += 1
             }
         } else if (current is AnswerFeedback.Incorrect) {
-            delay(1000)
+            delay(750)
             feedback = AnswerFeedback.None
         }
     }

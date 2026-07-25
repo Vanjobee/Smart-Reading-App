@@ -8,6 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.sgbread.app.R
@@ -28,9 +30,22 @@ fun FarmBackground(modifier: Modifier = Modifier) {
             contentDescription = null,
             modifier = Modifier
                 .fillMaxSize()
-                .alpha(0.5f),
+                .alpha(0.62f),
             contentScale = ContentScale.Crop,
             alignment = Alignment.Center
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            CreamWhite.copy(alpha = 0.34f),
+                            Color.White.copy(alpha = 0.18f),
+                            CreamWhite.copy(alpha = 0.52f)
+                        )
+                    )
+                )
         )
     }
 }

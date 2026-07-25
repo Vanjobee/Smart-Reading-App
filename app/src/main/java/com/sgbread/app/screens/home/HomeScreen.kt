@@ -26,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -63,7 +64,10 @@ fun HomeScreen(
 
     HomeScreenContent(
         selectorsEnabled = true,
-        onPlayIntro = { audio.playRawResource(R.raw.intro, key = "home-intro") },
+        onPlayIntro = {
+            audio.stopPlayback()
+            audio.playRawResource(R.raw.intro, key = "home-intro")
+        },
         onModuleSelected = { moduleId ->
             audio.stopPlayback()
             onModuleSelected(moduleId)
@@ -105,6 +109,7 @@ private fun HomeScreenContent(
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(16.dp)
                 .size(56.dp)
+                .shadow(8.dp, CircleShape)
                 .clip(CircleShape)
                 .background(SunYellow)
                 .clickable(enabled = selectorsEnabled, onClick = onPlayIntro),
@@ -118,6 +123,7 @@ private fun HomeScreenContent(
                 .align(Alignment.TopEnd)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(16.dp)
+                .shadow(8.dp, RoundedCornerShape(50))
                 .clip(RoundedCornerShape(50))
                 .background(CreamWhite.copy(alpha = 0.92f))
                 .clickable(enabled = selectorsEnabled, onClick = onProfileSelected)

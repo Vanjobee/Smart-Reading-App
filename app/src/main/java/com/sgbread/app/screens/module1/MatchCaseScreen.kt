@@ -119,7 +119,7 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
 
     LaunchedEffect(feedback) {
         if (feedback !is AnswerFeedback.None) {
-            delay(900)
+            delay(750)
             feedback = AnswerFeedback.None
             lastWrongPair = null
         }
@@ -127,7 +127,7 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
 
     LaunchedEffect(matchAudioFinished) {
         if (matchAudioFinished) {
-            delay(1450)
+            delay(1150)
             while (audio.isPlaying.value) delay(100)
             matchAudioFinished = false
             lockInput = false
@@ -143,7 +143,7 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
 
     LaunchedEffect(reveal) {
         if (reveal != null) {
-            delay(1400)
+            delay(1200)
             reveal = null
         }
     }

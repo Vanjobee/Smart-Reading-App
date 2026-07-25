@@ -1,6 +1,7 @@
 package com.sgbread.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,7 +39,9 @@ fun ActivityCompleteOverlay(onContinue: () -> Unit, modifier: Modifier = Modifie
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .widthIn(max = 360.dp)
+                .shadow(16.dp, RoundedCornerShape(32.dp))
                 .background(CreamWhite, RoundedCornerShape(28.dp))
+                .border(3.dp, RiceGreenDark.copy(alpha = 0.55f), RoundedCornerShape(28.dp))
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

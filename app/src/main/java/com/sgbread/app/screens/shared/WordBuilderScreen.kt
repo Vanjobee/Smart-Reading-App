@@ -97,8 +97,10 @@ fun WordBuilderScreen(
     LaunchedEffect(roundIndex) {
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Put the letters in the correct order!")
-            delay(900)
+            audio.playRecordedPrompt("Put the letters in the correct order!") {
+                speakPrompt()
+            }
+            return@LaunchedEffect
         }
         speakPrompt()
     }
@@ -123,7 +125,7 @@ fun WordBuilderScreen(
 
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
-            delay(900)
+            delay(250)
             audio.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
@@ -133,14 +135,14 @@ fun WordBuilderScreen(
     LaunchedEffect(feedback) {
         val current = feedback
         if (current is AnswerFeedback.Correct) {
-            delay(1200)
+            delay(850)
             while (audio.isPlaying.value) delay(100)
             feedback = AnswerFeedback.None
             if (!finished) {
                 roundIndex += 1
             }
         } else if (current is AnswerFeedback.Incorrect) {
-            delay(1000)
+            delay(750)
             feedback = AnswerFeedback.None
             tiles = tiles.map { it.copy(placedAt = null) }
         }

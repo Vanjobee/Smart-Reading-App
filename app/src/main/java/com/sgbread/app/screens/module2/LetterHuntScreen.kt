@@ -130,8 +130,10 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
     LaunchedEffect(roundIndex) {
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Lets search the letter in the farm!")
-            delay(900)
+            audio.playRecordedPrompt("Lets search the letter in the farm!") {
+                speakPrompt()
+            }
+            return@LaunchedEffect
         }
         speakPrompt()
     }
@@ -157,7 +159,7 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
 
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
-            delay(1500)
+            delay(300)
             audio.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
@@ -166,7 +168,7 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
 
     LaunchedEffect(feedback) {
         if (feedback is AnswerFeedback.Correct) {
-            delay(1200)
+            delay(850)
             while (audio.isPlaying.value) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == huntRounds.lastIndex) {

@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sgbread.app.audio.AudioManager
+import com.sgbread.app.ui.theme.CreamWhite
 import com.sgbread.app.ui.theme.TextBrown
 
 /**
@@ -85,7 +86,9 @@ fun ActivityScaffold(
                             }
                         }
                     },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = CreamWhite.copy(alpha = 0.78f)
+                    )
                 )
             }
         ) { padding ->

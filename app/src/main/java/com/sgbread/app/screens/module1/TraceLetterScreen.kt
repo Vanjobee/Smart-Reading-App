@@ -161,8 +161,10 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         completionAudioFinished = false
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Trace Letter!")
-            delay(900)
+            audio.playRecordedPrompt("Trace Letter!") {
+                audio.playLetterName(item.letter)
+            }
+            return@LaunchedEffect
         }
         // Only the letter's name is given up front — the word is revealed after
         // the child finishes tracing, so it doesn't give the answer away early.

@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -54,10 +55,17 @@ import com.sgbread.app.ui.theme.TextBrown
 enum class ChoiceState { IDLE, SELECTED, CORRECT, WRONG }
 
 private fun ChoiceState.borderColor(): Color = when (this) {
-    ChoiceState.IDLE -> Color(0x33000000)
+    ChoiceState.IDLE -> Color(0x408B5E34)
     ChoiceState.SELECTED -> SunOrange
     ChoiceState.CORRECT -> CorrectGreen
     ChoiceState.WRONG -> IncorrectRed
+}
+
+private fun ChoiceState.cardColor(): Color = when (this) {
+    ChoiceState.IDLE -> CreamWhite
+    ChoiceState.SELECTED -> Color(0xFFFFF1C2)
+    ChoiceState.CORRECT -> Color(0xFFE8F7DF)
+    ChoiceState.WRONG -> Color(0xFFFFE1DF)
 }
 
 /** A tappable card showing a picture and optional caption, used across matching games.
@@ -77,10 +85,11 @@ fun PictureChoiceCard(
     Column(
         modifier = modifier
             .widthIn(min = imageSize + 32.dp)
-            .background(CreamWhite, RoundedCornerShape(20.dp))
-            .border(3.dp, state.borderColor(), RoundedCornerShape(20.dp))
+            .shadow(if (state == ChoiceState.IDLE) 4.dp else 8.dp, RoundedCornerShape(22.dp))
+            .background(state.cardColor(), RoundedCornerShape(22.dp))
+            .border(3.dp, state.borderColor(), RoundedCornerShape(22.dp))
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(10.dp),
+            .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (image != null) {
@@ -116,8 +125,9 @@ fun BasketDropTarget(
     Box(
         modifier = modifier
             .size(size)
-            .background(CreamWhite, RoundedCornerShape(20.dp))
-            .border(3.dp, state.borderColor(), RoundedCornerShape(20.dp))
+            .shadow(if (state == ChoiceState.IDLE) 3.dp else 8.dp, RoundedCornerShape(22.dp))
+            .background(state.cardColor(), RoundedCornerShape(22.dp))
+            .border(3.dp, state.borderColor(), RoundedCornerShape(22.dp))
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -141,8 +151,9 @@ fun LetterChip(
     Box(
         modifier = modifier
             .size(size)
-            .background(if (letter == ' ') Color(0x22000000) else CreamWhite, RoundedCornerShape(14.dp))
-            .border(3.dp, state.borderColor(), RoundedCornerShape(14.dp))
+            .shadow(if (state == ChoiceState.IDLE) 3.dp else 7.dp, RoundedCornerShape(16.dp))
+            .background(if (letter == ' ') Color(0x22FFFFFF) else state.cardColor(), RoundedCornerShape(16.dp))
+            .border(3.dp, state.borderColor(), RoundedCornerShape(16.dp))
             .then(if (onClick != null) Modifier.clickable(enabled = enabled, onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center
     ) {
@@ -170,8 +181,9 @@ fun FarmTile(
 ) {
     Column(
         modifier = modifier
-            .background(CreamWhite, RoundedCornerShape(24.dp))
-            .border(3.dp, if (completed) CorrectGreen else Color(0x22000000), RoundedCornerShape(24.dp))
+            .shadow(6.dp, RoundedCornerShape(26.dp))
+            .background(CreamWhite.copy(alpha = 0.96f), RoundedCornerShape(26.dp))
+            .border(3.dp, if (completed) CorrectGreen else Color(0x338B5E34), RoundedCornerShape(26.dp))
             .clickable(onClick = onClick)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally

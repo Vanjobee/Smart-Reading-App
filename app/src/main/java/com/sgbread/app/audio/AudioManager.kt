@@ -138,6 +138,11 @@ class AudioManager private constructor(context: Context) {
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
         .build()
 
+    private val backgroundMusicAttributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build()
+
     private val soundResources: Map<Sfx, Int> = mapOf(
         Sfx.CORRECT to R.raw.sfx_correct,
         Sfx.INCORRECT to R.raw.sfx_incorrect,
@@ -199,6 +204,7 @@ class AudioManager private constructor(context: Context) {
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
     private var currentPlayer: MediaPlayer? = null
+    private var backgroundMusicPlayer: MediaPlayer? = null
     private var activeRequest: PlaybackRequest? = null
     private var playbackActive = false
     private var ttsReady = false
@@ -279,6 +285,38 @@ class AudioManager private constructor(context: Context) {
                 enqueue(listOf(PlaybackRequest.Recorded(resourceId, key)), debounce = false)
             }
         }
+    }
+
+    fun startBackgroundMusic() {
+        mainHandler.post {
+            val existing = backgroundMusicPlayer
+            if (existing != null) {
+                if (!existing.isPlaying) runCatching { existing.start() }
+                return@post
+            }
+
+            val player = MediaPlayer.create(appContext, R.raw.soundore_funny_farm_368485, backgroundMusicAttributes, 0)
+                ?: return@post
+            backgroundMusicPlayer = player
+            player.isLooping = true
+            player.setVolume(BACKGROUND_MUSIC_VOLUME, BACKGROUND_MUSIC_VOLUME)
+            player.setOnErrorListener { failedPlayer, _, _ ->
+                failedPlayer.release()
+                if (backgroundMusicPlayer === failedPlayer) backgroundMusicPlayer = null
+                true
+            }
+            runCatching { player.start() }
+        }
+    }
+
+    fun pauseBackgroundMusic() {
+        mainHandler.post {
+            backgroundMusicPlayer?.takeIf { it.isPlaying }?.pause()
+        }
+    }
+
+    fun stopBackgroundMusic() {
+        mainHandler.post { stopBackgroundMusicNow() }
     }
 
     fun playSfx(sfx: Sfx) {
@@ -474,6 +512,7 @@ class AudioManager private constructor(context: Context) {
             return
         }
         currentPlayer = player
+        player.setVolume(LESSON_AUDIO_VOLUME, LESSON_AUDIO_VOLUME)
         runCatching {
             player.playbackParams = player.playbackParams.setSpeed(request.rate.coerceIn(0.75f, 1.25f))
         }
@@ -494,7 +533,10 @@ class AudioManager private constructor(context: Context) {
     private fun startSynthesized(request: PlaybackRequest.Synthesized) {
         textToSpeech.setSpeechRate(request.rate.coerceIn(0.75f, 1.25f))
         val utteranceId = "sgbread-${++utteranceCounter}"
-        val result = textToSpeech.speak(request.text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+        val params = Bundle().apply {
+            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, LESSON_AUDIO_VOLUME)
+        }
+        val result = textToSpeech.speak(request.text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
         if (result == TextToSpeech.ERROR) finishCurrentPlayback()
     }
 
@@ -533,6 +575,13 @@ class AudioManager private constructor(context: Context) {
         }
         recognizer.cancel()
         _isPlaying.value = false
+    }
+
+    private fun stopBackgroundMusicNow() {
+        backgroundMusicPlayer?.setOnErrorListener(null)
+        runCatching { backgroundMusicPlayer?.stop() }
+        backgroundMusicPlayer?.release()
+        backgroundMusicPlayer = null
     }
 
     /**
@@ -574,6 +623,7 @@ class AudioManager private constructor(context: Context) {
 
     fun shutdown() {
         stopPlaybackNow()
+        stopBackgroundMusicNow()
         textToSpeech.stop()
         textToSpeech.shutdown()
         recognizer.destroy()
@@ -586,8 +636,10 @@ class AudioManager private constructor(context: Context) {
         /** Words whose slug collides with a Java reserved keyword and can't be used
          * as an Android resource name; their .mp3 is bundled with a trailing underscore. */
         private val RESERVED_RESOURCE_NAMES = setOf("this")
-        private const val PLAYBACK_GAP_MS = 180L
-        private const val DEBOUNCE_MS = 350L
+        private const val PLAYBACK_GAP_MS = 90L
+        private const val DEBOUNCE_MS = 250L
+        private const val BACKGROUND_MUSIC_VOLUME = 0.16f
+        private const val LESSON_AUDIO_VOLUME = 1.0f
 
         fun getInstance(context: Context): AudioManager =
             instance ?: synchronized(this) {

@@ -90,8 +90,10 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         filledLetter = null
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Which letter is missing?")
-            delay(900)
+            audio.playRecordedPrompt("Which letter is missing?") {
+                speakPrompt()
+            }
+            return@LaunchedEffect
         }
         speakPrompt()
     }
@@ -111,7 +113,7 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
     LaunchedEffect(feedback) {
         val current = feedback
         if (current is AnswerFeedback.Correct) {
-            delay(1100)
+            delay(850)
             while (audio.isPlaying.value) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
@@ -121,7 +123,7 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                 roundIndex += 1
             }
         } else if (current is AnswerFeedback.Incorrect) {
-            delay(900)
+            delay(750)
             feedback = AnswerFeedback.None
         }
     }
