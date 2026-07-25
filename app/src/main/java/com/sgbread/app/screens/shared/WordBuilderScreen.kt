@@ -111,8 +111,9 @@ fun WordBuilderScreen(
                 feedback = AnswerFeedback.Correct("Great job!")
                 audio.playWordThenRecorded(round.word, "Great job!")
             } else {
-                audio.playWord(round.word, rate = 0.9f)
-                pendingPraise = true
+                audio.playWord(round.word, rate = 0.9f) {
+                    pendingPraise = true
+                }
             }
         } else {
             audio.playSfx(Sfx.INCORRECT)
@@ -148,6 +149,7 @@ fun WordBuilderScreen(
     fun onSlotTap(slot: Int) {
         val placedIndex = tiles.indexOfFirst { it.placedAt == slot }
         if (placedIndex != -1) {
+            audio.stopPlayback()
             tiles = tiles.toMutableList().also { it[placedIndex] = it[placedIndex].copy(placedAt = null) }
             audio.playSfx(Sfx.TAP)
         }
@@ -159,7 +161,8 @@ fun WordBuilderScreen(
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
         audio = audio,
-        playFeedbackAudio = !finished
+        playFeedbackAudio = !finished,
+        blockInputDuringAudio = false
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
@@ -187,6 +190,7 @@ fun WordBuilderScreen(
                                 onDragStart = { offset ->
                                     val nearest = chipPositions.entries.minByOrNull { (_, pos) -> (pos - offset).getDistance() }
                                     if (nearest != null && (nearest.value - offset).getDistance() < hitRadius) {
+                                        audio.stopPlayback()
                                         draggingTileIndex = nearest.key
                                         dragOffset = Offset.Zero
                                         audio.playLetterSound(tiles[nearest.key].letter)

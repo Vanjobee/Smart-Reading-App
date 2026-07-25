@@ -73,13 +73,17 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     fun onPick(choice: BlendWord) {
         // Every card speaks its own word on tap, whether or not it's the right answer --
         // lets the child explore/hear all the choices, not just the one they land on.
-        audio.playWord(choice.word, rate = 0.9f)
+        audio.stopPlayback()
         if (choice.word == round.word) {
-            pendingPraise = true
+            audio.playWord(choice.word, rate = 0.9f) {
+                pendingPraise = true
+            }
         } else {
-            audio.playSfx(Sfx.INCORRECT)
-            wrongWord = choice.word
-            feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
+            audio.playWord(choice.word, rate = 0.9f) {
+                audio.playSfx(Sfx.INCORRECT)
+                wrongWord = choice.word
+                feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
+            }
         }
     }
 
@@ -115,7 +119,8 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         onBack = onBack,
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
-        audio = audio
+        audio = audio,
+        blockInputDuringAudio = false
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
@@ -128,7 +133,7 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
             ) {
                 Text("Word ${roundIndex + 1} of ${rounds.size}", style = MaterialTheme.typography.bodyMedium)
                 Text(
-                    "Tap each letter to hear it, then find the picture",
+                    "Tap each letter sound, blend the word, then choose the picture",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = metrics.spacing)
@@ -143,12 +148,21 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                         ) {
                             round.word.forEach { c ->
                                 LetterChip(
-                                    letter = c,
+                                    letter = c.uppercaseChar(),
                                     size = metrics.chipSize,
-                                    onClick = { audio.speakLetterThenWord(c, round.word, rate = 0.85f) }
+                                    onClick = {
+                                        audio.stopPlayback()
+                                        audio.playLetterSound(c)
+                                    }
                                 )
                             }
                         }
+                        Text(
+                            round.word,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(top = metrics.gridSpacing)
+                        )
                     },
                     choices = {
                         Row(

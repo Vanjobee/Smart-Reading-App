@@ -117,7 +117,8 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         onBack = onBack,
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
-        audio = audio
+        audio = audio,
+        blockInputDuringAudio = false
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)

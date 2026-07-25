@@ -187,7 +187,8 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         title = "Trace the Letter",
         onBack = onBack,
         onReplayInstructions = { speakCurrent() },
-        audio = audio
+        audio = audio,
+        blockInputDuringAudio = false
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
@@ -214,6 +215,8 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                         .pointerInput(stepIndex, canvasSize) {
                             detectDragGestures(
                                 onDragStart = { offset ->
+                                    if (letterPopupVisible) return@detectDragGestures
+                                    audio.stopPlayback()
                                     if (strokes.isEmpty() && currentStroke.isEmpty()) audio.playLetterName(item.letter)
                                     currentStroke = listOf(offset)
                                 },

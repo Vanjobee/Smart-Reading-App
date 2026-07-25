@@ -76,8 +76,10 @@ fun ActivityScaffold(
                     actions = {
                         if (onReplayInstructions != null) {
                             IconButton(
-                                onClick = onReplayInstructions,
-                                enabled = !isAudioPlaying
+                                onClick = {
+                                    audio?.stopPlayback()
+                                    onReplayInstructions()
+                                }
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = "Hear instructions", tint = TextBrown)
                             }

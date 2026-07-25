@@ -1,6 +1,8 @@
 package com.sgbread.app.screens.module4
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -11,9 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
 import com.sgbread.app.data.LettersBank
@@ -36,10 +38,15 @@ import com.sgbread.app.data.Praise
 import com.sgbread.app.ui.components.ActivityCompleteOverlay
 import com.sgbread.app.ui.components.ActivityScaffold
 import com.sgbread.app.ui.components.AnswerFeedback
+import com.sgbread.app.ui.components.ChoiceState
 import com.sgbread.app.ui.components.TwoPaneActivityBody
 import com.sgbread.app.ui.components.activityLayoutMetrics
 import com.sgbread.app.ui.icons.FarmIcon
+import com.sgbread.app.ui.theme.CorrectGreen
+import com.sgbread.app.ui.theme.CreamWhite
+import com.sgbread.app.ui.theme.IncorrectRed
 import com.sgbread.app.ui.theme.SgbReadTheme
+import com.sgbread.app.ui.theme.SoilBrown
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -73,9 +80,11 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
     }
 
     fun onPick(word: String) {
+        audio.stopPlayback()
         if (word == round.word) {
-            audio.playWord(round.word, rate = 0.9f)
-            pendingPraise = true
+            audio.playWord(round.word, rate = 0.9f) {
+                pendingPraise = true
+            }
         } else {
             audio.playSfx(Sfx.INCORRECT)
             wrongWord = word
@@ -115,7 +124,8 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
         onBack = onBack,
         onReplayInstructions = { speakWord() },
         feedback = feedback,
-        audio = audio
+        audio = audio,
+        blockInputDuringAudio = false
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
@@ -143,7 +153,10 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
                                 contentDescription = round.word,
                                 modifier = Modifier
                                     .size(metrics.largePictureSize)
-                                    .clickable { speakWord() },
+                                    .clickable {
+                                        audio.stopPlayback()
+                                        speakWord()
+                                    },
                                 contentScale = ContentScale.Fit
                             )
                         } else if (round.icon != null) {
@@ -151,7 +164,10 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
                                 round.icon,
                                 modifier = Modifier
                                     .size(metrics.largePictureSize)
-                                    .clickable { speakWord() }
+                                    .clickable {
+                                        audio.stopPlayback()
+                                        speakWord()
+                                    }
                             )
                         }
                     },
@@ -162,15 +178,16 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             choices.forEach { word ->
-                                OutlinedButton(
+                                SpellingChoiceBox(
+                                    word = word,
+                                    state = when {
+                                        wrongWord == word -> ChoiceState.WRONG
+                                        word == round.word && feedback is AnswerFeedback.Correct -> ChoiceState.CORRECT
+                                        else -> ChoiceState.IDLE
+                                    },
                                     onClick = { onPick(word) },
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        containerColor = if (wrongWord == word) Color(0x33E57373) else Color.White
-                                    )
-                                ) {
-                                    Text(word, style = MaterialTheme.typography.titleLarge)
-                                }
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
                         }
                     }
@@ -181,6 +198,36 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
         if (finished) {
             ActivityCompleteOverlay(onContinue = onComplete)
         }
+    }
+}
+
+@Composable
+private fun SpellingChoiceBox(
+    word: String,
+    state: ChoiceState,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val borderColor = when (state) {
+        ChoiceState.CORRECT -> CorrectGreen
+        ChoiceState.WRONG -> IncorrectRed
+        ChoiceState.SELECTED -> CorrectGreen
+        ChoiceState.IDLE -> Color(0x33000000)
+    }
+    BoxWithConstraints(
+        modifier = modifier
+            .background(CreamWhite, RoundedCornerShape(10.dp))
+            .border(3.dp, borderColor, RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            word,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.ExtraBold,
+            color = SoilBrown
+        )
     }
 }
 

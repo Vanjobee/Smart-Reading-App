@@ -243,7 +243,8 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
         onBack = onBack,
         onReplayInstructions = { instructions() },
         feedback = feedback,
-        audio = audio
+        audio = audio,
+        blockInputDuringAudio = false
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
@@ -285,6 +286,7 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                                     .minByOrNull { (_, pos) -> (pos - offset).getDistance() }
                                 if (nearest != null && (nearest.value - offset).getDistance() < startHitRadius) {
                                     val choice = choices.first { it.id == nearest.key }
+                                    audio.stopPlayback()
                                     draggingChoiceId = choice.id
                                     dragOffset = Offset.Zero
                                     audio.playLetterName(choice.letter.uppercaseChar())
@@ -339,7 +341,12 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                             },
                             size = basketSize,
                             fontSize = basketFontSize,
-                            onClick = { audio.playLetterName(target.letter) },
+                            onClick = {
+                                if (!lockInput) {
+                                    audio.stopPlayback()
+                                    audio.playLetterName(target.letter)
+                                }
+                            },
                             modifier = Modifier.onGloballyPositioned { coords ->
                                 val container = containerCoords ?: return@onGloballyPositioned
                                 val center = Offset(coords.size.width / 2f, coords.size.height / 2f)

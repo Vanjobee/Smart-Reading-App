@@ -210,7 +210,10 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                                     modifier = Modifier
                                         .size(metrics.largePictureSize)
                                         .padding(bottom = metrics.spacing)
-                                        .clickable { audio.playWord(round.word, rate = 0.9f) },
+                                        .clickable {
+                                            audio.stopPlayback()
+                                            audio.playWord(round.word, rate = 0.9f)
+                                        },
                                     contentScale = ContentScale.Fit
                                 )
                             } else if (round.icon != null) {
@@ -219,7 +222,10 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                                     modifier = Modifier
                                         .size(metrics.largePictureSize)
                                         .padding(bottom = metrics.spacing)
-                                        .clickable { audio.playWord(round.word, rate = 0.9f) }
+                                        .clickable {
+                                            audio.stopPlayback()
+                                            audio.playWord(round.word, rate = 0.9f)
+                                        }
                                 )
                             }
                             FlowRow(
