@@ -3,8 +3,11 @@ package com.sgbread.app.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -52,7 +55,9 @@ fun PlantProgressBar(fraction: Float, modifier: Modifier = Modifier) {
             modifier = Modifier
                 .padding(top = 6.dp)
                 .clip(RoundedCornerShape(50))
-                .size(width = 220.dp, height = 10.dp),
+                .fillMaxWidth()
+                .widthIn(max = 220.dp)
+                .height(10.dp),
             color = RiceGreenDark,
             trackColor = SunYellow.copy(alpha = 0.3f)
         )

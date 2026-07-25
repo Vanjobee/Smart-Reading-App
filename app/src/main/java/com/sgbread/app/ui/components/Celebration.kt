@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -33,16 +35,18 @@ fun ActivityCompleteOverlay(onContinue: () -> Unit, modifier: Modifier = Modifie
     ) {
         Column(
             modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .widthIn(max = 360.dp)
                 .background(CreamWhite, RoundedCornerShape(28.dp))
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             FarmIcon(FarmIconKey.SPROUT_HARVEST, modifier = Modifier.size(96.dp), background = null)
-            Text(
+            AutoSizeText(
                 Praise.randomCorrect(),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.padding(top = 12.dp)
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
+                maxLines = 1,
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
             )
             Text(
                 "You finished the activity!",

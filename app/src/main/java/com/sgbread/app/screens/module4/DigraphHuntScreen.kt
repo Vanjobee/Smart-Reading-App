@@ -1,14 +1,18 @@
 package com.sgbread.app.screens.module4
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,7 +24,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
 import com.sgbread.app.data.LettersBank
@@ -30,56 +38,78 @@ import com.sgbread.app.ui.components.ActivityScaffold
 import com.sgbread.app.ui.components.AnswerFeedback
 import com.sgbread.app.ui.components.ChoiceState
 import com.sgbread.app.ui.components.PictureChoiceCard
+import com.sgbread.app.ui.components.ResponsiveColumn
+import com.sgbread.app.ui.components.activityLayoutMetrics
+import com.sgbread.app.ui.theme.CreamWhite
+import com.sgbread.app.ui.theme.RiceGreenDark
+import com.sgbread.app.ui.theme.SgbReadTheme
 import kotlinx.coroutines.delay
 
-// Patterns with at least two example words make for a meaningful hunt.
-private val huntPatterns = listOf("SH", "CH", "EE")
 private val huntWords = LettersBank.patternWords.distinctBy { it.word }
 
+/**
+ * One target word at a time: the child sees/hears the target digraph, then picks the
+ * matching word from two large picture choices (1 correct + 1 distractor).
+ */
 @Composable
 fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+    // Every pattern in the bank is fair game now that a round only needs one matching
+    // word (not "find all"); freshly shuffled each time the screen is entered.
+    val huntPatterns = remember { huntWords.map { it.pattern }.distinct().shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
-    var found by remember(roundIndex) { mutableStateOf(setOf<String>()) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
+    var wrongWord by remember { mutableStateOf<String?>(null) }
+    var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
     val targetPattern = huntPatterns[roundIndex]
-    val board = remember(roundIndex) { huntWords.shuffled() }
-    val targetWords = board.filter { it.pattern == targetPattern }.map { it.word }.toSet()
-
-    fun speakPrompt() = audio.speak("Find all the words with $targetPattern.", rate = 0.9f)
-    LaunchedEffect(roundIndex) { speakPrompt() }
-
-    LaunchedEffect(feedback) {
-        if (feedback !is AnswerFeedback.None) {
-            delay(700)
-            feedback = AnswerFeedback.None
-        }
+    val target = remember(roundIndex) { huntWords.filter { it.pattern == targetPattern }.random() }
+    val choices = remember(roundIndex) {
+        val distractors = huntWords.filter { it.pattern != targetPattern }.shuffled().take(1)
+        (distractors + target).shuffled()
     }
 
-    fun onWordTap(word: String) {
-        if (word in found) return
-        if (word in targetWords) {
-            audio.playSfx(Sfx.CORRECT)
-            found = found + word
-            if (found.size == targetWords.size) {
-                feedback = AnswerFeedback.Correct(Praise.randomCorrect())
-            }
+    fun speakPrompt() = audio.playPatternSound(targetPattern)
+    LaunchedEffect(roundIndex) {
+        wrongWord = null
+        speakPrompt()
+    }
+
+    fun onPick(word: String) {
+        if (word == target.word) {
+            audio.playWord(target.word, rate = 0.9f)
+            pendingPraise = true
         } else {
             audio.playSfx(Sfx.INCORRECT)
-            feedback = AnswerFeedback.Incorrect("That one doesn't have $targetPattern")
+            wrongWord = word
+            feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
         }
     }
 
-    LaunchedEffect(found) {
-        if (targetWords.isNotEmpty() && found.size == targetWords.size) {
-            delay(1000)
+    LaunchedEffect(pendingPraise) {
+        if (pendingPraise) {
+            delay(900)
+            audio.playSfx(Sfx.CORRECT)
+            feedback = AnswerFeedback.Correct(Praise.randomCorrect())
+            pendingPraise = false
+        }
+    }
+
+    LaunchedEffect(feedback) {
+        val current = feedback
+        if (current is AnswerFeedback.Correct) {
+            delay(1200)
+            feedback = AnswerFeedback.None
             if (roundIndex == huntPatterns.lastIndex) {
                 audio.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 roundIndex += 1
             }
+        } else if (current is AnswerFeedback.Incorrect) {
+            delay(900)
+            feedback = AnswerFeedback.None
+            wrongWord = null
         }
     }
 
@@ -87,41 +117,90 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         title = "Digraph Hunt",
         onBack = onBack,
         onReplayInstructions = { speakPrompt() },
-        feedback = feedback
+        feedback = feedback,
+        audio = audio
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Round ${roundIndex + 1} of ${huntPatterns.size}", style = MaterialTheme.typography.bodyMedium)
-            Text(
-                "Find every word with \"$targetPattern\" (${found.size} / ${targetWords.size})",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(5),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(bottom = 24.dp),
-                modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
-            ) {
-                items(board.size) { i ->
-                    val w = board[i]
-                    PictureChoiceCard(
-                        icon = w.icon,
-                        label = w.word,
-                        state = if (w.word in found) ChoiceState.CORRECT else ChoiceState.IDLE,
-                        enabled = w.word !in found,
-                        onClick = { onWordTap(w.word) }
-                    )
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            ResponsiveColumn(metrics = metrics, modifier = Modifier.padding(padding)) {
+                Text("Round ${roundIndex + 1} of ${huntPatterns.size}", style = MaterialTheme.typography.bodyMedium)
+
+                @Composable
+                fun QuestionPane() {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(metrics.spacing)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(if (metrics.compactHeight) 82.dp else 96.dp)
+                                .background(CreamWhite, RoundedCornerShape(22.dp))
+                                .border(4.dp, RiceGreenDark, RoundedCornerShape(22.dp))
+                                .clickable { audio.playPatternSound(targetPattern) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                targetPattern,
+                                fontSize = if (metrics.compactHeight) 34.sp else 40.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = RiceGreenDark
+                            )
+                        }
+                        Text(
+                            "Find the word with \"$targetPattern\"",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
+
+                @Composable
+                fun ChoicesPane() {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(metrics.gridSpacing),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        choices.forEach { w ->
+                            PictureChoiceCard(
+                                icon = w.icon,
+                                image = w.image,
+                                label = null,
+                                imageSize = metrics.choiceImageSize,
+                                state = when {
+                                    w.word == target.word && feedback is AnswerFeedback.Correct -> ChoiceState.CORRECT
+                                    wrongWord == w.word -> ChoiceState.WRONG
+                                    else -> ChoiceState.IDLE
+                                },
+                                enabled = feedback is AnswerFeedback.None,
+                                onClick = { onPick(w.word) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+
+                // Question/prompt on top, choices below -- portrait-only, top-to-bottom flow.
+                QuestionPane()
+                ChoicesPane()
             }
         }
 
         if (finished) {
             ActivityCompleteOverlay(onContinue = onComplete)
         }
+    }
+}
+
+@Preview(device = "spec:width=360dp,height=800dp,orientation=portrait", showBackground = true)
+@Composable
+private fun DigraphHuntScreenPreview() {
+    SgbReadTheme {
+        DigraphHuntScreen(
+            audio = AudioManager.getInstance(LocalContext.current),
+            onComplete = {},
+            onBack = {}
+        )
     }
 }

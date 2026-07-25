@@ -13,9 +13,12 @@ theme for the Zanjera farming community. Built with Kotlin and Jetpack Compose.
   2. **Phonics** — Listen and Match, Tap the Letter, Letter Hunt
   3. **Blending (CVC Words)** — Build the Word, Supply the Missing Letter, Blend and Read
   4. **Consonant & Vowel Digraphs** — Listen and Build, Picture-to-Word Match, Digraph Hunt
-- **Voice-over & pronunciation** via Android's TextToSpeech (US English, slowed rate)
-  for every letter, word, and instruction, plus short chime/SFX for correct/incorrect
-  answers and activity completion.
+- **Voice-over & pronunciation** via pre-recorded native audio files for every letter,
+  word, and instruction, plus short chime/SFX for feedback.
+- **Audio Analysis**: Integrated speech recognition to evaluate learner pronunciation
+  against target sounds and words in real-time.
+- **Responsive Design**: All screens utilize flexible layouts and scrollable containers
+  to ensure a polished look across all Android device sizes and densities.
 - **Immediate, gentle feedback**: correct answers get a chime, checkmark, and a random
   praise phrase (Great Job!, Excellent!, Super Reader!...); incorrect answers get a
   soft tone and another try — never a penalty.
@@ -50,9 +53,10 @@ sync, or from the command line:
 
 ## Design notes
 
-- Interactions are **tap-based** rather than free-drag (e.g. "tap a letter, then tap
-  its basket") — the source document allows drag *or* tap, and tapping is more
-  reliable for young children's motor skills.
+- Interactions mix **tap-to-hear** (choices speak their sound on touch) with
+  **drag-and-drop** for submitting an answer (e.g. Letter Basket, Match Upper &
+  Lowercase) — the source document allows either, and combining them lets kids
+  preview a sound before committing to a choice.
 - All farm pictures are vector illustrations drawn at runtime (`ui/icons/FarmIcon.kt`)
   so the app has no image asset pipeline to maintain.
 - SFX (`app/src/main/res/raw/*.wav`) are procedurally generated placeholder tones;

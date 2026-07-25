@@ -1,0 +1,67 @@
+{
+  "level_id": "level_1",
+  "title": "Level 1",
+  "theme": "farm",
+  "phases": [
+    {
+      "id": "l1_phase_1_phonics",
+      "type": "phonics_tap",
+      "title": "Phonics Sounds",
+      "instruction_text": "Let's learn the phonics of the alphabet by tapping each letter shown.",
+      "instruction_audio": "audio/instructions/l1_phase_1.mp3",
+      "completion_rule": {
+        "type": "tap_each_item_n_times",
+        "count": 3
+      },
+      "items": [
+        { "id": "n", "label": "N", "audio": "audio/phonics/n.mp3" },
+        { "id": "i", "label": "I", "audio": "audio/phonics/i.mp3" },
+        { "id": "p", "label": "P", "audio": "audio/phonics/p.mp3" },
+        { "id": "t", "label": "T", "audio": "audio/phonics/t.mp3" },
+        { "id": "a", "label": "A", "audio": "audio/phonics/a.mp3" },
+        { "id": "s", "label": "S", "audio": "audio/phonics/s.mp3" }
+      ]
+    },
+    {
+      "id": "l1_phase_2_blending",
+      "type": "blending",
+      "title": "Blending",
+      "instruction_text": "Let's blend phonics sounds. Tap each letter to hear the sound and blend it.",
+      "instruction_audio": "audio/instructions/l1_phase_2.mp3",
+      "completion_rule": {
+        "type": "complete_n_random_words",
+        "count": 6,
+        "blend_delay_seconds": 12
+      },
+      "random_word_pool": [
+        "sat", "tat", "sit", "sis", "sin", "tip", "sap", "sip", "tap", "tin", "pin", "pan", "pat", "nap", "nit", "pit", "tan", "nip", "pip"
+      ]
+    },
+    {
+      "id": "l1_phase_3_farm_hunting",
+      "type": "picture_word_match",
+      "title": "Letter Farm Hunting",
+      "instruction_text": "Let's match words with pictures.",
+      "instruction_audio": "audio/instructions/l1_phase_3.mp3",
+      "completion_rule": {
+        "type": "complete_all_items"
+      },
+      "choice_count": 4,
+      "items": [
+        { "id": "sat", "word": "sat", "image": "images/words/sat.jpg", "word_audio": "audio/words/sat.mp3" },
+        { "id": "pin", "word": "pin", "image": "images/words/pin.jpg", "word_audio": "audio/words/pin.mp3" },
+        { "id": "pit", "word": "pit", "image": "images/words/pit.jpg", "word_audio": "audio/words/pit.mp3" }
+      ]
+    },
+    {
+      "id": "l1_phase_4_sentence_pyramid",
+      "type": "sentence_pyramid",
+      "title": "Simple Sentence",
+      "instruction_text": "Let's practice reading. Read each word in the sentence pyramid.",
+      "instruction_audio": null,
+      "completion_rule": {
+        "type": "complete_all_sentences"
+      }
+    }
+]
+}

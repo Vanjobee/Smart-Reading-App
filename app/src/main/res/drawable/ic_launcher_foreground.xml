@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path android:fillColor="#4C3319" android:pathData="M54,86 L54,60 L58,60 L58,86 Z" />
-    <path android:fillColor="#8FCB5C" android:pathData="M56,64 C40,64 34,50 36,38 C50,38 58,48 56,64 Z" />
-    <path android:fillColor="#6FB53F" android:pathData="M56,58 C72,58 78,44 76,32 C62,32 54,42 56,58 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M40,84 m-6,0 a6,6 0,1 1,12 0 a6,6 0,1 1,-12 0" />
-</vector>
+<!-- The logo's own circular badge already fills ~92-96% of its source canvas, so it
+     is inset here to land inside Android's adaptive-icon safe zone (~66% of the 108dp
+     canvas) instead of being clipped by circular/squircle launcher masks. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/logo"
+    android:insetLeft="15%"
+    android:insetTop="15%"
+    android:insetRight="15%"
+    android:insetBottom="15%" />

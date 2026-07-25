@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,10 +21,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.ui.theme.TextBrown
 
 /**
@@ -36,15 +46,27 @@ fun ActivityScaffold(
     onBack: () -> Unit,
     onReplayInstructions: (() -> Unit)?,
     feedback: AnswerFeedback = AnswerFeedback.None,
+    audio: AudioManager? = null,
+    playFeedbackAudio: Boolean = true,
     content: @Composable (PaddingValues) -> Unit
 ) {
+    val isAudioPlaying by audio?.isPlaying?.collectAsStateWithLifecycle()
+        ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
+    DisposableEffect(audio) {
+        onDispose { audio?.stopPlayback() }
+    }
+
+    // FarmBackground fills the true screen edge-to-edge; CenterAlignedTopAppBar already
+    // insets its own content from the status bar/cutout by default (TopAppBarDefaults.windowInsets),
+    // so padding the whole Box here would just double up and leave a gap above the background.
     Box(modifier = Modifier.fillMaxSize()) {
         FarmBackground()
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text(title, color = TextBrown) },
+                    title = { AutoSizeText(title, style = MaterialTheme.typography.titleLarge.copy(color = TextBrown)) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextBrown)
@@ -52,7 +74,10 @@ fun ActivityScaffold(
                     },
                     actions = {
                         if (onReplayInstructions != null) {
-                            IconButton(onClick = onReplayInstructions) {
+                            IconButton(
+                                onClick = onReplayInstructions,
+                                enabled = !isAudioPlaying
+                            ) {
                                 Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = "Hear instructions", tint = TextBrown)
                             }
                         }
@@ -62,15 +87,38 @@ fun ActivityScaffold(
             }
         ) { padding ->
             BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
-                content(PaddingValues())
+                val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+                val navPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
+                content(PaddingValues(bottom = metrics.feedbackClearance + navPadding))
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(bottom = 24.dp),
+                        .padding(bottom = if (metrics.compactHeight) 12.dp else 24.dp + navPadding),
                     verticalArrangement = androidx.compose.foundation.layout.Arrangement.Bottom,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    ReinforcementBanner(feedback)
+                    ReinforcementBanner(
+                        feedback = feedback,
+                        audio = audio,
+                        playAudio = playFeedbackAudio
+                    )
+                }
+
+                if (isAudioPlaying) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .semantics { disabled() }
+                            .pointerInput(Unit) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        awaitPointerEvent().changes.forEach { it.consume() }
+                                    }
+                                }
+                            }
+                    )
                 }
             }
         }

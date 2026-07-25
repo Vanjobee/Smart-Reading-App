@@ -1,0 +1,12 @@
+{
+  "app_content_version": "1.0.0",
+  "levels": [
+    {
+      "id": "level_1",
+      "title": "Level 1: N I P T A SC",
+      "description": "Basic phonics, blending, picture-word matching, and sentence pyramids.",
+      "data_file": "data/level_1.json",
+      "is_mvp": true
+    }
+  ]
+}

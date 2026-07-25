@@ -3,5 +3,9 @@
     <style name="Theme.SgbRead" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@color/sky_blue</item>
         <item name="android:windowBackground">@color/sky_blue</item>
+        <!-- Without this, a camera cutout (which lands on the left/right edge in this
+             landscape-locked app) makes the system letterbox away from it by default,
+             showing as a black bar down one side instead of drawing full-bleed under it. -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 </resources>

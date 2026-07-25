@@ -47,7 +47,6 @@ object Modules {
         title = "Blending (CVC Words)",
         icon = FarmIconKey.SPROUT_GROWING,
         activities = listOf(
-            ActivityInfo("m3a1", "Build the Word", "Drag letter tiles to build the word", "build_word"),
             ActivityInfo("m3a2", "Supply the Missing Letter", "Complete the missing letter", "missing_letter"),
             ActivityInfo("m3a3", "Blend and Read", "Listen, blend the sounds, choose the word", "blend_read")
         )

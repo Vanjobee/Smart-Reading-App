@@ -27,15 +27,10 @@ object Vocabulary {
 
     val level1 = VocabLevel(
         number = 1,
-        title = "Three-Letter Words (CVC & Simple Words)",
+        title = "CVC (Consonant–Vowel–Consonant)",
         words = listOf(
-            VocabWord("ant", FarmIconKey.ANT),
             VocabWord("cat", FarmIconKey.CAT),
-            VocabWord("cow", FarmIconKey.COW),
             VocabWord("dog", FarmIconKey.DOG),
-            VocabWord("dry"),
-            VocabWord("egg", FarmIconKey.EGG),
-            VocabWord("hay", FarmIconKey.STRAW),
             VocabWord("hen", FarmIconKey.HEN),
             VocabWord("hat"),
             VocabWord("mud", FarmIconKey.MUD),
@@ -43,67 +38,71 @@ object Vocabulary {
             VocabWord("pig", FarmIconKey.PIG),
             VocabWord("rat", FarmIconKey.RAT),
             VocabWord("sun", FarmIconKey.SUN),
-            VocabWord("ube"),
             VocabWord("wet", FarmIconKey.WET)
         )
     )
 
     val level2 = VocabLevel(
         number = 2,
-        title = "Four- and Five-Letter Words",
+        title = "CVCC (Consonant–Vowel–Consonant–Consonant)",
         words = listOf(
             VocabWord("barn", FarmIconKey.BARN),
             VocabWord("calf"),
             VocabWord("corn", FarmIconKey.CORN),
-            VocabWord("duck", FarmIconKey.DUCK),
-            VocabWord("farm", FarmIconKey.BARN),
-            VocabWord("frog", FarmIconKey.FROG),
-            VocabWord("goat", FarmIconKey.GOAT),
-            VocabWord("heat", FarmIconKey.HEAT),
+            VocabWord("farm"),
             VocabWord("milk", FarmIconKey.MILK),
-            VocabWord("okra", FarmIconKey.OKRA),
-            VocabWord("pail", FarmIconKey.PAIL),
-            VocabWord("rain", FarmIconKey.RAIN),
-            VocabWord("rice", FarmIconKey.RICE),
-            VocabWord("rope", FarmIconKey.ROPE),
-            VocabWord("sack", FarmIconKey.SACK),
-            VocabWord("soil", FarmIconKey.SOIL),
-            VocabWord("weed", FarmIconKey.WEED),
-            VocabWord("wind", FarmIconKey.WIND)
+            VocabWord("wind", FarmIconKey.WIND),
+            VocabWord("nest")
         )
     )
 
     val level3 = VocabLevel(
         number = 3,
-        title = "Consonant Digraphs",
+        title = "Consonant Digraphs (ch, sh, th, ck)",
         families = listOf(
             SoundFamily("CH", listOf(VocabWord("chick", FarmIconKey.CHICK), VocabWord("chicken", FarmIconKey.CHICKEN), VocabWord("chop"))),
             SoundFamily("SH", listOf(VocabWord("sheep", FarmIconKey.SHEEP), VocabWord("shed", FarmIconKey.SHED), VocabWord("shovel", FarmIconKey.SHOVEL))),
-            SoundFamily("TH", listOf(VocabWord("thresh", FarmIconKey.GRAIN))),
-            SoundFamily("CK", listOf(VocabWord("duck", FarmIconKey.DUCK)))
+            SoundFamily("TH", listOf(VocabWord("thresh"))),
+            SoundFamily("CK", listOf(VocabWord("duck", FarmIconKey.DUCK), VocabWord("sack", FarmIconKey.SACK)))
         )
     )
 
     val level4 = VocabLevel(
         number = 4,
-        title = "Vowel Digraphs",
+        title = "Vowel Digraphs (ee, ea, ai, oa, ay, ow, oi)",
         families = listOf(
-            SoundFamily("EE", listOf(VocabWord("bee", FarmIconKey.BEE), VocabWord("feed"), VocabWord("seed", FarmIconKey.SEED), VocabWord("seeds", FarmIconKey.SEEDS))),
-            SoundFamily("EA", listOf(VocabWord("bean", FarmIconKey.BEAN))),
-            SoundFamily("AI", listOf(VocabWord("rain", FarmIconKey.RAIN))),
-            SoundFamily("OA", listOf(VocabWord("goat", FarmIconKey.GOAT)))
+            SoundFamily("EE", listOf(VocabWord("bee", FarmIconKey.BEE), VocabWord("feed"), VocabWord("seed", FarmIconKey.SEED), VocabWord("seeds", FarmIconKey.SEEDS), VocabWord("weed", FarmIconKey.WEED), VocabWord("tree"))),
+            SoundFamily("EA", listOf(VocabWord("heat", FarmIconKey.HEAT), VocabWord("bean", FarmIconKey.BEAN))),
+            SoundFamily("AI", listOf(VocabWord("pail", FarmIconKey.PAIL), VocabWord("rain", FarmIconKey.RAIN), VocabWord("quail"))),
+            SoundFamily("UI", listOf(VocabWord("juice"))),
+            SoundFamily("OA", listOf(VocabWord("goat", FarmIconKey.GOAT))),
+            SoundFamily("AY", listOf(VocabWord("hay"))),
+            SoundFamily("OW", listOf(VocabWord("cow", FarmIconKey.COW))),
+            SoundFamily("OI", listOf(VocabWord("soil", FarmIconKey.SOIL)))
         )
     )
 
     val level5 = VocabLevel(
         number = 5,
-        title = "Consonant Blends",
+        title = "Consonant Blends (two consonant sounds, not a digraph)",
         families = listOf(
-            SoundFamily("GR", listOf(VocabWord("grain", FarmIconKey.GRAIN), VocabWord("grass"), VocabWord("graft"))),
-            SoundFamily("PL", listOf(VocabWord("plant", FarmIconKey.GARDEN_PLANT), VocabWord("plow"), VocabWord("plows"))),
-            SoundFamily("PR", listOf(VocabWord("prune"))),
-            SoundFamily("SP", listOf(VocabWord("spade", FarmIconKey.SPADE), VocabWord("spray"), VocabWord("sprayer"))),
-            SoundFamily("ST", listOf(VocabWord("straw", FarmIconKey.STRAW)))
+            SoundFamily("DR", listOf(VocabWord("dry"))),
+            SoundFamily("FR", listOf(VocabWord("frog", FarmIconKey.FROG))),
+            SoundFamily("KR", listOf(VocabWord("okra", FarmIconKey.OKRA)))
+        )
+    )
+
+    /** Doesn't fit the CVC/CVCC/digraph/blend patterns above cleanly. Numbered 10 (not
+     * 6) to avoid colliding with [level6]/[level7] below and with Module5Data's 8/9. */
+    val levelOther = VocabLevel(
+        number = 10,
+        title = "Other / Irregular",
+        words = listOf(
+            VocabWord("ant", FarmIconKey.ANT),
+            VocabWord("egg", FarmIconKey.EGG),
+            VocabWord("ube"),
+            VocabWord("rice", FarmIconKey.RICE),
+            VocabWord("rope", FarmIconKey.ROPE)
         )
     )
 
@@ -145,5 +144,5 @@ object Vocabulary {
         )
     )
 
-    val allLevels = listOf(level1, level2, level3, level4, level5, level6, level7)
+    val allLevels = listOf(level1, level2, level3, level4, level5, levelOther, level6, level7)
 }

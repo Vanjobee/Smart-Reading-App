@@ -18,7 +18,6 @@ import com.sgbread.app.screens.module2.ListenMatchScreen
 import com.sgbread.app.screens.module2.LetterHuntScreen
 import com.sgbread.app.screens.module2.TapLetterScreen
 import com.sgbread.app.screens.module3.BlendReadScreen
-import com.sgbread.app.screens.module3.BuildWordScreen
 import com.sgbread.app.screens.module3.MissingLetterScreen
 import com.sgbread.app.screens.module4.DigraphBuildScreen
 import com.sgbread.app.screens.module4.DigraphHuntScreen
@@ -41,7 +40,6 @@ fun SgbNavGraph(
 
         composable(Routes.HOME) {
             HomeScreen(
-                progressViewModel = progressViewModel,
                 audio = audio,
                 onModuleSelected = { moduleId -> navController.navigate(Routes.module(moduleId)) },
                 onProfileSelected = { navController.navigate(Routes.PROFILE) }
@@ -60,8 +58,9 @@ fun SgbNavGraph(
             val module = Modules.all.firstOrNull { it.id == moduleId } ?: Modules.module1
             ModuleScreen(
                 module = module,
-                progressViewModel = progressViewModel,
+                audio = audio,
                 onActivitySelected = { route -> navController.navigate(route) },
+                onProfileSelected = { navController.navigate(Routes.PROFILE) },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -89,9 +88,6 @@ fun SgbNavGraph(
         }
 
         // Module 3: Blending
-        composable("build_word") {
-            BuildWordScreen(audio, onComplete = { progressViewModel.completeActivity("m3a1"); navController.popBackStack() }, onBack = { navController.popBackStack() })
-        }
         composable("missing_letter") {
             MissingLetterScreen(audio, onComplete = { progressViewModel.completeActivity("m3a2"); navController.popBackStack() }, onBack = { navController.popBackStack() })
         }
