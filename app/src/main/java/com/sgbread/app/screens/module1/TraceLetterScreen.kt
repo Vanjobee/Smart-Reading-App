@@ -31,14 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -76,18 +74,23 @@ private data class GlyphMask(
     val brushWidth: Float
 )
 
-private fun buildGlyphMask(glyph: Char, width: Float, height: Float): GlyphMask? {
+private fun buildGlyphMask(glyph: String, width: Float, height: Float): GlyphMask? {
     if (width <= 0f || height <= 0f) return null
     val minDim = minOf(width, height)
     val paint = android.graphics.Paint().apply {
         isAntiAlias = true
-        textSize = minDim * 0.7f
-        textAlign = android.graphics.Paint.Align.CENTER
+        textSize = minDim * 0.62f
+        textAlign = android.graphics.Paint.Align.LEFT
         isFakeBoldText = true
     }
     val outline = android.graphics.Path()
-    paint.getTextPath(glyph.toString(), 0, 1, width / 2f, height * 0.72f, outline)
+    paint.getTextPath(glyph, 0, glyph.length, 0f, 0f, outline)
     val bounds = android.graphics.RectF()
+    outline.computeBounds(bounds, true)
+    outline.offset(
+        (width - bounds.width()) / 2f - bounds.left,
+        (height - bounds.height()) / 2f - bounds.top
+    )
     outline.computeBounds(bounds, true)
     val clipBounds = android.graphics.Region(0, 0, width.toInt().coerceAtLeast(1), height.toInt().coerceAtLeast(1))
     val region = android.graphics.Region().apply { setPath(outline, clipBounds) }
@@ -113,7 +116,7 @@ private fun buildGlyphMask(glyph: Char, width: Float, height: Float): GlyphMask?
 fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     // Freshly shuffled each time the screen is entered, so replays don't always start on A-F.
     val traceLetters = remember { LettersBank.phonicsItems.shuffled().take(10) }
-    var stepIndex by remember { mutableStateOf(0) } // 0..(letters.size*2 - 1)
+    var stepIndex by remember { mutableStateOf(0) }
     // Finished strokes plus the one currently being drawn, kept separate so lifting a
     // finger between strokes (e.g. the crossbar of "A") doesn't erase earlier ink.
     var strokes by remember { mutableStateOf(listOf<List<Offset>>()) }
@@ -122,10 +125,9 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
     var letterPopupVisible by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
-    val totalSteps = traceLetters.size * 2
-    val item = traceLetters[stepIndex / 2]
-    val isUpper = stepIndex % 2 == 0
-    val glyph = if (isUpper) item.letter.uppercaseChar() else item.letter.lowercaseChar()
+    val totalSteps = traceLetters.size
+    val item = traceLetters[stepIndex]
+    val glyph = "${item.letter.uppercaseChar()}${item.letter.lowercaseChar()}"
 
     // Manual replay gives the recorded letter name without revealing the reward word.
     fun speakCurrent() {
@@ -190,7 +192,7 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                 verticalPadding = if (metrics.compactHeight) 2.dp else 8.dp
             ) {
                 Text(
-                    "Letter ${stepIndex / 2 + 1} of ${traceLetters.size} — ${if (isUpper) "Uppercase" else "Lowercase"}",
+                    "Letter ${stepIndex + 1} of ${traceLetters.size} — trace $glyph",
                     style = if (metrics.compactHeight) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 0.dp)
                 )
@@ -248,16 +250,11 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                 ) {
                     drawRoundRect(CreamWhite, cornerRadius = androidx.compose.ui.geometry.CornerRadius(24f, 24f))
                     val mask = glyphMask
-                    val nativeCanvas = drawContext.canvas.nativeCanvas
-                    val guidePaint = Paint().asFrameworkPaint().apply {
-                        isAntiAlias = true
-                        textSize = size.minDimension * 0.7f
-                        color = android.graphics.Color.argb(70, 74, 52, 35)
-                        textAlign = android.graphics.Paint.Align.CENTER
-                        isFakeBoldText = true
-                    }
-                    nativeCanvas.drawText(glyph.toString(), size.width / 2f, size.height * 0.72f, guidePaint)
                     if (mask != null) {
+                        drawPath(
+                            mask.outline,
+                            SoilBrown.copy(alpha = 0.22f)
+                        )
                         clipPath(mask.outline) {
                             (strokes + listOf(currentStroke)).forEach { stroke ->
                                 if (stroke.size > 1) {
@@ -299,7 +296,7 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                                 contentScale = ContentScale.Fit
                             )
                             Text(
-                                "\"${item.letter}\" is for \"${item.word}\"",
+                                "\"$glyph\" is for \"${item.word}\"",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = SoilBrown,

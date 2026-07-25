@@ -23,7 +23,7 @@ object Modules {
         title = "Letter Recognition",
         icon = FarmIconKey.SPROUT_SEED,
         activities = listOf(
-            ActivityInfo("m1a1", "Trace the Letter", "Trace uppercase and lowercase letters", "trace_letter"),
+            ActivityInfo("m1a1", "Trace the Letter", "Trace uppercase and lowercase letter pairs", "trace_letter"),
             ActivityInfo("m1a2", "Letter Basket", "Drag letters into the matching basket", "letter_basket"),
             ActivityInfo("m1a3", "Match Upper & Lowercase", "Match letter pairs and meet a farm word", "match_case")
         )
