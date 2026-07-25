@@ -63,7 +63,7 @@ private const val SAMPLE_GRID = 18
 // Requires most of the glyph's interior to be covered (not just a rough scribble)
 // before the trace counts as complete and the word is revealed.
 private const val COMPLETION_THRESHOLD = 0.9f
-private const val LETTER_POPUP_MS = 1900L
+private const val LETTER_POPUP_HOLD_AFTER_AUDIO_MS = 450L
 
 /** The traceable region of a glyph: its filled outline plus a grid of interior sample
  * points used to measure how much of the letter the child has actually covered. */
@@ -123,6 +123,7 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
     var currentStroke by remember { mutableStateOf(listOf<Offset>()) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var letterPopupVisible by remember { mutableStateOf(false) }
+    var completionAudioFinished by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
     val totalSteps = traceLetters.size
@@ -136,7 +137,10 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
 
     // Completion repeats the recorded letter name, then reveals its vocabulary word.
     fun speakCompletion() {
-        audio.speakLetterNameThenWord(item.letter, item.word, rate = 0.85f)
+        completionAudioFinished = false
+        audio.speakLetterNameThenWord(item.letter, item.word, rate = 0.85f) {
+            completionAudioFinished = true
+        }
     }
 
     // Rebuilt whenever the letter or canvas size changes; supplies both the touch-hit
@@ -154,6 +158,7 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         strokes = emptyList()
         currentStroke = emptyList()
         letterPopupVisible = false
+        completionAudioFinished = false
         if (!hasIntroduced) {
             hasIntroduced = true
             audio.playRecordedPrompt("Trace Letter!")
@@ -164,10 +169,11 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         audio.playLetterName(item.letter)
     }
 
-    LaunchedEffect(letterPopupVisible) {
-        if (letterPopupVisible) {
-            delay(LETTER_POPUP_MS)
+    LaunchedEffect(completionAudioFinished) {
+        if (completionAudioFinished) {
+            delay(LETTER_POPUP_HOLD_AFTER_AUDIO_MS)
             letterPopupVisible = false
+            completionAudioFinished = false
             if (stepIndex == totalSteps - 1) {
                 audio.playSfx(Sfx.HARVEST)
                 finished = true

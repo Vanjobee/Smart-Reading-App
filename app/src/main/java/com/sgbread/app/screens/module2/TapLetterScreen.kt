@@ -81,11 +81,14 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     }
 
     fun onPick(letter: Char) {
+        audio.stopPlayback()
         if (letter == round.letter) {
-            audio.playWord(round.word, rate = 0.9f)
-            pendingPraise = true
+            audio.speakLetterThenWord(round.letter, round.word, rate = 0.9f) {
+                pendingPraise = true
+            }
         } else {
             audio.playSfx(Sfx.INCORRECT)
+            audio.playLetterSound(letter)
             wrongLetter = letter
             feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
         }
@@ -122,7 +125,8 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         onBack = onBack,
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
-        audio = audio
+        audio = audio,
+        blockInputDuringAudio = false
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
@@ -149,7 +153,10 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                             contentDescription = round.word,
                             modifier = Modifier
                                 .size(metrics.largePictureSize * M2_SCALE)
-                                .clickable { audio.playWord(round.word, rate = 0.9f) },
+                                .clickable {
+                                    audio.stopPlayback()
+                                    audio.playWord(round.word, rate = 0.9f)
+                                },
                             contentScale = ContentScale.Fit
                         )
                     },

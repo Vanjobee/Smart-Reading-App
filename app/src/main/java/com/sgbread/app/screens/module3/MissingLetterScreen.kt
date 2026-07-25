@@ -49,12 +49,13 @@ import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 private const val DROP_HIT_RADIUS_DP = 44
+private const val CHOICE_COUNT = 4
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val rounds = remember { LettersBank.blendWords.shuffled().take(10) }
+    val rounds = remember { LettersBank.blendWords.filter { it.word.length == 3 }.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongLetter by remember { mutableStateOf<Char?>(null) }
@@ -70,11 +71,14 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
     var containerCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
     val round = rounds[roundIndex]
-    val blankIndex = remember(roundIndex) { round.word.indices.random() }
+    val blankIndex = remember(roundIndex) { listOf(0, round.word.lastIndex).random() }
     val missingLetter = round.word[blankIndex]
     val choices = remember(roundIndex) {
-        val distractors = ('a'..'z').filter { it != missingLetter }.shuffled().take(1)
-        (distractors + missingLetter).shuffled()
+        val distractors = ('a'..'z')
+            .filter { it != missingLetter }
+            .shuffled()
+            .take(CHOICE_COUNT - 1)
+        (distractors + missingLetter).distinct().shuffled()
     }
 
     fun speakPrompt() = audio.playWord(round.word, rate = 0.85f)
@@ -125,7 +129,8 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         onBack = onBack,
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
-        audio = audio
+        audio = audio,
+        blockInputDuringAudio = false
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
@@ -156,6 +161,7 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                                     if (filledLetter != null) return@detectDragGestures
                                     val nearest = chipPositions.entries.minByOrNull { (_, pos) -> (pos - offset).getDistance() }
                                     if (nearest != null && (nearest.value - offset).getDistance() < hitRadius) {
+                                        audio.stopPlayback()
                                         draggingLetter = nearest.key
                                         dragOffset = Offset.Zero
                                         audio.playLetterSound(nearest.key)
@@ -246,7 +252,7 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                         },
                         choices = {
                             Text(
-                                "Drag the missing letter into the blank",
+                                "Drag the missing beginning or ending letter",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(bottom = metrics.spacing)
@@ -254,13 +260,14 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(metrics.gridSpacing, Alignment.CenterHorizontally),
-                                verticalArrangement = Arrangement.spacedBy(metrics.gridSpacing)
+                                verticalArrangement = Arrangement.spacedBy(metrics.gridSpacing),
+                                maxItemsInEachRow = CHOICE_COUNT
                             ) {
                                 choices.forEach { c ->
                                     val isDragging = draggingLetter == c
                                     LetterChip(
                                         letter = c,
-                                        size = metrics.choiceChipSize,
+                                        size = if (metrics.compactWidth || metrics.compactHeight) metrics.chipSize else metrics.choiceChipSize,
                                         state = when {
                                             isDragging -> ChoiceState.SELECTED
                                             wrongLetter == c -> ChoiceState.WRONG
