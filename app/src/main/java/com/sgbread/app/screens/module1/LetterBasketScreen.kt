@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -38,6 +37,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -63,12 +63,81 @@ import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.SoilBrown
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 /** A round's target letter bundled with its choice set (target + 2 distractors), computed
  * together so the answer can never end up desynced from the picture it belongs to. */
-private data class BasketRound(val target: PhonicsItem, val choices: List<Char>)
+private data class BasketRound(val target: PhonicsItem, val choices: List<BasketChoice>)
+private data class BasketChoice(val id: Int, val letter: Char, val isTarget: Boolean, val found: Boolean = false)
 
-private const val WORD_POPUP_MS = 1900L
+private const val WORD_POPUP_HOLD_AFTER_AUDIO_MS = 450L
+private const val BASKET_CHOICE_COUNT = 18
+private const val BASKET_TARGET_COUNT = 6
+
+private fun buildBasketChoices(target: Char): List<BasketChoice> {
+    val distractors = LettersBank.phonicsItems.map { it.letter }.filter { it != target }
+    val targetChoices = List(BASKET_TARGET_COUNT) { index ->
+        BasketChoice(
+            id = index,
+            letter = if (index % 2 == 0) target.uppercaseChar() else target.lowercaseChar(),
+            isTarget = true
+        )
+    }
+    val distractorChoices = List(BASKET_CHOICE_COUNT - BASKET_TARGET_COUNT) { index ->
+        val letter = distractors.random()
+        BasketChoice(
+            id = BASKET_TARGET_COUNT + index,
+            letter = if (Random.nextBoolean()) letter.uppercaseChar() else letter.lowercaseChar(),
+            isTarget = false
+        )
+    }
+    return (targetChoices + distractorChoices).shuffled()
+}
+
+private fun scatterPositions(
+    count: Int,
+    boundsWidthPx: Float,
+    boundsHeightPx: Float,
+    chipPx: Float,
+    seed: Int
+): List<Offset> {
+    val random = Random(seed)
+    if (count <= 0 || boundsWidthPx <= 0f || boundsHeightPx <= 0f) return emptyList()
+
+    val edgePadding = chipPx * 0.22f
+    val minDistance = chipPx * 1.08f
+    val maxX = (boundsWidthPx - chipPx - edgePadding).coerceAtLeast(edgePadding)
+    val maxY = (boundsHeightPx - chipPx - edgePadding).coerceAtLeast(edgePadding)
+    val positions = mutableListOf<Offset>()
+
+    repeat(count) {
+        var bestCandidate = Offset(edgePadding, edgePadding)
+        var bestDistance = -1f
+        var attempts = 0
+
+        while (attempts < 120) {
+            val candidate = Offset(
+                x = edgePadding + random.nextFloat() * (maxX - edgePadding).coerceAtLeast(0f),
+                y = edgePadding + random.nextFloat() * (maxY - edgePadding).coerceAtLeast(0f)
+            )
+            val nearestDistance = positions.minOfOrNull { (it - candidate).getDistance() } ?: Float.MAX_VALUE
+            if (nearestDistance >= minDistance) {
+                bestCandidate = candidate
+                bestDistance = nearestDistance
+                break
+            }
+            if (nearestDistance > bestDistance) {
+                bestCandidate = candidate
+                bestDistance = nearestDistance
+            }
+            attempts++
+        }
+
+        positions.add(bestCandidate)
+    }
+
+    return positions
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -76,34 +145,39 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
     // Freshly shuffled each time the screen is entered, so replays don't always start on A-C.
     val basketRounds = remember {
         LettersBank.phonicsItems.shuffled().take(10).map { target ->
-            val distractors = LettersBank.phonicsItems
-                .filter { it.letter != target.letter }
-                .shuffled()
-                .take(1)
-                .map { it.letter }
-            BasketRound(target, (listOf(target.letter) + distractors).shuffled())
+            BasketRound(target, buildBasketChoices(target.letter))
         }
     }
     var roundIndex by remember { mutableStateOf(0) }
     val round = basketRounds[roundIndex]
     val target = round.target
-    val choices = round.choices
+    var choices by remember(roundIndex) { mutableStateOf(buildBasketChoices(target.letter)) }
+    val foundCount = choices.count { it.isTarget && it.found }
+    val targetPair = "${target.letter.uppercaseChar()}${target.letter.lowercaseChar()}"
 
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var lockInput by remember { mutableStateOf(false) }
-    var lastWrongLetter by remember { mutableStateOf<Char?>(null) }
+    var lastWrongChoiceId by remember { mutableStateOf<Int?>(null) }
     var finished by remember { mutableStateOf(false) }
     // Reward popup shown on a correct match -- reveals the sample word this letter
     // stands for, which is otherwise never shown up front (no more reference picture).
     var wordPopupVisible by remember { mutableStateOf(false) }
+    var wordSoundFinished by remember { mutableStateOf(false) }
 
-    var draggingLetter by remember { mutableStateOf<Char?>(null) }
+    var draggingChoiceId by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isHoveringBasket by remember { mutableStateOf(false) }
-    val chipPositions = remember { mutableMapOf<Char, Offset>() }
+    val chipPositions = remember { mutableMapOf<Int, Offset>() }
     var containerCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var basketCenter by remember { mutableStateOf<Offset?>(null) }
     var basketRadius by remember { mutableStateOf(0f) }
+
+    LaunchedEffect(roundIndex) {
+        chipPositions.clear()
+        draggingChoiceId = null
+        dragOffset = Offset.Zero
+        isHoveringBasket = false
+    }
 
     fun instructions() = audio.playRecordedPrompt(
         "Tap the sample letter to hear it, then drag its match into the basket.",
@@ -111,26 +185,38 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
     )
     LaunchedEffect(Unit) { instructions() }
 
-    fun evaluate(letter: Char) {
-        if (letter == target.letter) {
-            lockInput = true
+    fun evaluate(choiceId: Int) {
+        val choice = choices.firstOrNull { it.id == choiceId } ?: return
+        if (choice.isTarget) {
             audio.playSfx(Sfx.CORRECT)
-            // Sample Word audio plays as soon as the popup appears.
-            audio.playWord(target.word, rate = 0.9f)
-            wordPopupVisible = true
+            val updatedChoices = choices.map {
+                if (it.id == choiceId) it.copy(found = true) else it
+            }
+            choices = updatedChoices
+            draggingChoiceId = null
+            dragOffset = Offset.Zero
+            if (foundCount + 1 == BASKET_TARGET_COUNT) {
+                lockInput = true
+                wordPopupVisible = true
+                wordSoundFinished = false
+                audio.playWord(target.word, rate = 0.9f, onComplete = {
+                    wordSoundFinished = true
+                })
+            }
         } else {
             audio.playSfx(Sfx.INCORRECT)
-            lastWrongLetter = letter
+            lastWrongChoiceId = choiceId
             feedback = AnswerFeedback.Incorrect("Try another letter!")
         }
     }
 
-    LaunchedEffect(wordPopupVisible) {
-        if (wordPopupVisible) {
-            delay(WORD_POPUP_MS)
+    LaunchedEffect(wordSoundFinished) {
+        if (wordSoundFinished) {
+            delay(WORD_POPUP_HOLD_AFTER_AUDIO_MS)
             wordPopupVisible = false
+            wordSoundFinished = false
             lockInput = false
-            draggingLetter = null
+            draggingChoiceId = null
             dragOffset = Offset.Zero
             if (roundIndex == basketRounds.size - 1) {
                 audio.playSfx(Sfx.HARVEST)
@@ -146,8 +232,8 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
             delay(900)
             feedback = AnswerFeedback.None
             lockInput = false
-            lastWrongLetter = null
-            draggingLetter = null
+            lastWrongChoiceId = null
+            draggingChoiceId = null
             dragOffset = Offset.Zero
         }
     }
@@ -165,19 +251,19 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                    .padding(horizontal = 8.dp, vertical = if (metrics.compactHeight) 2.dp else 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Tap the letter, then drag its match into the basket",
-                    style = MaterialTheme.typography.titleMedium,
+                    "Drag all matching letters into the basket",
+                    style = if (metrics.compactHeight) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = if (metrics.compactHeight) 1.dp else 4.dp)
                 )
                 Text(
-                    "Round ${roundIndex + 1} of ${basketRounds.size}",
+                    "Round ${roundIndex + 1} of ${basketRounds.size} • Found $foundCount / $BASKET_TARGET_COUNT",
                     style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = if (metrics.compactHeight) 4.dp else 8.dp)
                 )
 
                 Box(
@@ -185,8 +271,9 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                         .weight(1f)
                         .fillMaxWidth()
                         .onGloballyPositioned { containerCoords = it }
-                        .pointerInput(roundIndex, metrics.chipSize) {
-                            val startHitRadius = maxOf(48.dp.toPx(), metrics.chipSize.toPx() * 0.9f)
+                        .pointerInput(roundIndex, metrics.chipSize, choices) {
+                            val chipSizePx = (metrics.chipSize * 0.86f).toPx()
+                            val startHitRadius = maxOf(36.dp.toPx(), chipSizePx * 0.9f)
                             detectDragGestures(
                             onDragStart = { offset ->
                                 if (lockInput) return@detectDragGestures
@@ -194,18 +281,19 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                                 // positions from earlier rounds can otherwise "win" the nearest
                                 // check and silently grab a letter that isn't even on screen.
                                 val nearest = chipPositions.entries
-                                    .filter { (letter, _) -> letter in choices }
+                                    .filter { (id, _) -> choices.any { it.id == id && !it.found } }
                                     .minByOrNull { (_, pos) -> (pos - offset).getDistance() }
                                 if (nearest != null && (nearest.value - offset).getDistance() < startHitRadius) {
-                                    draggingLetter = nearest.key
+                                    val choice = choices.first { it.id == nearest.key }
+                                    draggingChoiceId = choice.id
                                     dragOffset = Offset.Zero
-                                    audio.playLetterName(nearest.key)
+                                    audio.playLetterName(choice.letter.uppercaseChar())
                                 }
                             },
                             onDrag = { _, dragAmount ->
-                                if (draggingLetter != null) {
+                                if (draggingChoiceId != null) {
                                     dragOffset += dragAmount
-                                    val start = chipPositions[draggingLetter]
+                                    val start = chipPositions[draggingChoiceId]
                                     val center = basketCenter
                                     if (start != null && center != null) {
                                         isHoveringBasket = (start + dragOffset - center).getDistance() < basketRadius
@@ -213,21 +301,21 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                                 }
                             },
                             onDragEnd = {
-                                val letter = draggingLetter
-                                val start = letter?.let { chipPositions[it] }
+                                val choiceId = draggingChoiceId
+                                val start = choiceId?.let { chipPositions[it] }
                                 val center = basketCenter
                                 isHoveringBasket = false
-                                if (letter != null && start != null && center != null &&
+                                if (choiceId != null && start != null && center != null &&
                                     (start + dragOffset - center).getDistance() < basketRadius
                                 ) {
-                                    evaluate(letter)
+                                    evaluate(choiceId)
                                 } else {
-                                    draggingLetter = null
+                                    draggingChoiceId = null
                                     dragOffset = Offset.Zero
                                 }
                             },
                             onDragCancel = {
-                                draggingLetter = null
+                                draggingChoiceId = null
                                 dragOffset = Offset.Zero
                                 isHoveringBasket = false
                             }
@@ -237,13 +325,13 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                     // Enlarged for visibility and touch target size -- this single element is
                     // now both the "hear the sound" button and the drag-drop target, so it
                     // needs to read clearly on its own without a separate sample-letter tile.
-                    val basketSize = if (metrics.compactWidth || metrics.compactHeight) 150.dp else 190.dp
-                    val basketFontSize = if (metrics.compactWidth || metrics.compactHeight) 56.sp else 72.sp
+                    val basketSize = if (metrics.compactWidth || metrics.compactHeight) 132.dp else 190.dp
+                    val basketFontSize = if (metrics.compactWidth || metrics.compactHeight) 48.sp else 72.sp
 
                     @Composable
                     fun SampleLetterAndBasket() {
                         BasketWithLetter(
-                            letter = target.letter,
+                            letter = targetPair,
                             state = when {
                                 wordPopupVisible -> ChoiceState.CORRECT
                                 isHoveringBasket -> ChoiceState.SELECTED
@@ -262,27 +350,46 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                     }
 
                     @Composable
-                    fun Choices() {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+                    fun Choices(modifier: Modifier = Modifier) {
+                        BoxWithConstraints(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .background(CreamWhite.copy(alpha = 0.28f), RoundedCornerShape(24.dp))
+                                .padding(if (metrics.compactHeight) 6.dp else 10.dp)
                         ) {
-                            choices.forEach { letter ->
-                                val isDragging = draggingLetter == letter
+                            val visibleChoices = choices.filterNot { it.found }
+                            val density = LocalDensity.current
+                            val chipSize = if (metrics.compactWidth || metrics.compactHeight) {
+                                metrics.chipSize * 0.78f
+                            } else {
+                                metrics.chipSize * 0.86f
+                            }
+                            val chipPx = with(density) { chipSize.toPx() }
+                            val widthPx = with(density) { maxWidth.toPx() }
+                            val heightPx = with(density) { maxHeight.toPx() }
+                            val positions = remember(roundIndex, visibleChoices.map { it.id }, widthPx, heightPx, chipPx) {
+                                scatterPositions(visibleChoices.size, widthPx, heightPx, chipPx, seed = roundIndex + 71)
+                            }
+                            visibleChoices.forEachIndexed { index, choice ->
+                                val isDragging = draggingChoiceId == choice.id
+                                val pos = positions.getOrElse(index) { Offset.Zero }
+                                val offsetX = with(density) { pos.x.toDp() }
+                                val offsetY = with(density) { pos.y.toDp() }
                                 LetterChip(
-                                    letter = letter,
-                                    size = metrics.choiceChipSize,
+                                    letter = choice.letter,
+                                    size = chipSize,
                                     state = when {
                                         isDragging -> ChoiceState.SELECTED
-                                        lastWrongLetter == letter -> ChoiceState.WRONG
+                                        lastWrongChoiceId == choice.id -> ChoiceState.WRONG
                                         else -> ChoiceState.IDLE
                                     },
                                     modifier = Modifier
+                                        .offset(x = offsetX, y = offsetY)
                                         .onGloballyPositioned { coords ->
-                                            if (letter == draggingLetter) return@onGloballyPositioned
+                                            if (choice.id == draggingChoiceId) return@onGloballyPositioned
                                             val container = containerCoords ?: return@onGloballyPositioned
                                             val center = Offset(coords.size.width / 2f, coords.size.height / 2f)
-                                            chipPositions[letter] = container.localPositionOf(coords, center)
+                                            chipPositions[choice.id] = container.localPositionOf(coords, center)
                                         }
                                         .then(
                                             if (isDragging) {
@@ -299,12 +406,12 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                     // Portrait-only, top-to-bottom flow: the basket (with its sample letter)
                     // sits above the answer choices instead of splitting the width between them.
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(metrics.spacing)
+                        verticalArrangement = Arrangement.spacedBy(if (metrics.compactHeight) 4.dp else metrics.spacing)
                     ) {
                         SampleLetterAndBasket()
-                        Choices()
+                        Choices(Modifier.weight(1f))
                     }
                 }
             }
@@ -322,13 +429,13 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                     Column(
                         modifier = Modifier
                             .background(CreamWhite, RoundedCornerShape(28.dp))
-                            .padding(if (metrics.compactHeight) 16.dp else 24.dp),
+                            .padding(if (metrics.compactHeight) 22.dp else 28.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Image(
                             painter = painterResource(target.image),
                             contentDescription = target.word,
-                            modifier = Modifier.size(metrics.pictureSize),
+                            modifier = Modifier.size(if (metrics.compactHeight) metrics.largePictureSize else metrics.largePictureSize * 1.15f),
                             contentScale = ContentScale.Fit
                         )
                         Text(
@@ -355,7 +462,7 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
  * center (bias 0.27) to land inside the basket's drawn bowl rather than its handle. */
 @Composable
 private fun BasketWithLetter(
-    letter: Char,
+    letter: String,
     state: ChoiceState,
     size: Dp,
     fontSize: TextUnit,
@@ -370,7 +477,7 @@ private fun BasketWithLetter(
     ) {
         BasketDropTarget(state = state, size = size)
         Text(
-            letter.toString(),
+            letter,
             fontSize = fontSize,
             fontWeight = FontWeight.ExtraBold,
             color = RiceGreenDark,

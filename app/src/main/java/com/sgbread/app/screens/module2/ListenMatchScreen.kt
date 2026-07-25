@@ -73,9 +73,11 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
 
     fun onPick(index: Int) {
         val picked = choices[index]
+        audio.stopPlayback()
         if (picked.letter == round.letter) {
-            audio.playWord(round.word, rate = 0.9f)
-            pendingPraise = true
+            audio.speakLetterThenWord(round.letter, round.word, rate = 0.9f) {
+                pendingPraise = true
+            }
         } else {
             audio.playSfx(Sfx.INCORRECT)
             wrongPick = index
@@ -110,7 +112,7 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
     }
 
     ActivityScaffold(
-        title = "Listen and Match",
+        title = "Phonics Match",
         onBack = onBack,
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
@@ -129,7 +131,7 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                     style = if (metrics.compactHeight) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge
                 )
                 Text(
-                    "Tap the letter to hear it, then pick its picture",
+                    "Listen to the phonics sound, then choose its picture",
                     style = if (metrics.compactHeight) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = if (metrics.compactHeight) 2.dp else metrics.spacing)
@@ -143,7 +145,10 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                                 .size((if (metrics.compactHeight) 100.dp else 130.dp) * M2_SCALE)
                                 .background(CreamWhite, RoundedCornerShape(28.dp))
                                 .border(4.dp, RiceGreenDark, RoundedCornerShape(28.dp))
-                                .clickable { audio.playLetterSound(round.letter) },
+                                .clickable {
+                                    audio.stopPlayback()
+                                    audio.playLetterSound(round.letter)
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(

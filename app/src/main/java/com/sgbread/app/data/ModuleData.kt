@@ -35,9 +35,9 @@ object Modules {
         title = "Phonics",
         icon = FarmIconKey.SPROUT_SPROUT,
         activities = listOf(
-            ActivityInfo("m2a1", "Listen and Match", "Hear a letter sound, choose the picture", "listen_match"),
+            ActivityInfo("m2a1", "Phonics Match", "Listen to the phonics sound and choose its picture", "listen_match"),
             ActivityInfo("m2a2", "Tap the Letter", "See a picture, tap its beginning sound", "tap_letter"),
-            ActivityInfo("m2a3", "Letter Hunt", "Find hidden letters in the rice field", "letter_hunt")
+            ActivityInfo("m2a3", "Phonics Hunt", "Find uppercase and lowercase letters by sound", "letter_hunt")
         )
     )
 

@@ -310,23 +310,23 @@ class AudioManager private constructor(context: Context) {
     }
 
     /** Plays the recorded letter sound, then the word without overlap. */
-    fun speakLetterThenWord(letter: Char, word: String, rate: Float = 1.0f) {
+    fun speakLetterThenWord(letter: Char, word: String, rate: Float = 1.0f, onComplete: (() -> Unit)? = null) {
         val normalized = letter.uppercaseChar()
         val first = letterSoundIds[normalized]?.let {
             PlaybackRequest.Recorded(it, "letter-sound:$normalized", rate)
         } ?: resolvePrompt(normalized.toString(), rate)
-        enqueue(listOf(first, resolvePrompt(word, rate)), debounce = false)
+        enqueue(listOf(first, resolvePrompt(word, rate, onComplete)), debounce = false)
     }
 
     /** Plays the recorded letter *name* (e.g. "ay" for A), then the recorded [word]
      * shortly after -- for completion/reward moments that should teach the letter's
      * name rather than its phonetic sound. */
-    fun speakLetterNameThenWord(letter: Char, word: String, rate: Float = 1.0f) {
+    fun speakLetterNameThenWord(letter: Char, word: String, rate: Float = 1.0f, onComplete: (() -> Unit)? = null) {
         val normalized = letter.uppercaseChar()
         val first = letterNameSoundIds[normalized]?.let {
             PlaybackRequest.Recorded(it, "letter-name:$normalized", rate)
         } ?: resolvePrompt(normalized.toString(), rate)
-        enqueue(listOf(first, resolvePrompt(word, rate)), debounce = false)
+        enqueue(listOf(first, resolvePrompt(word, rate, onComplete)), debounce = false)
     }
 
     /** Plays [intro] then the recorded sound for [letter] without overlap. */

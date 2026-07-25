@@ -50,7 +50,7 @@ import kotlinx.coroutines.delay
 
 private const val UPPER_PREFIX = "U:"
 private const val LOWER_PREFIX = "L:"
-private const val PAIRS_PER_ROUND = 2
+private const val PAIRS_PER_ROUND = 5
 private const val ROUND_COUNT = 5
 
 /**
@@ -76,6 +76,8 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     var reveal by remember { mutableStateOf<PhonicsItem?>(null) }
     var finished by remember { mutableStateOf(false) }
     var lastWrongPair by remember { mutableStateOf<Pair<Char, Char>?>(null) }
+    var lockInput by remember { mutableStateOf(false) }
+    var matchAudioFinished by remember { mutableStateOf(false) }
 
     // Live drag-line state
     var dragFromKey by remember { mutableStateOf<String?>(null) }
@@ -90,13 +92,23 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     LaunchedEffect(Unit) { instructions() }
 
     fun evaluate(upper: Char, lower: Char) {
+        if (lockInput) return
         val base = upper.uppercaseChar()
         if (base == lower.uppercaseChar()) {
             audio.playSfx(Sfx.CORRECT)
-            matched = matched + base
+            val updatedMatched = matched + base
+            matched = updatedMatched
             val item = matchTargets.first { it.letter.uppercaseChar() == base }
             reveal = item
-            audio.speakLetterNameThenWord(item.letter, item.word)
+            if (updatedMatched.size == matchTargets.size) {
+                lockInput = true
+                matchAudioFinished = false
+                audio.speakLetterNameThenWord(item.letter, item.word) {
+                    matchAudioFinished = true
+                }
+            } else {
+                audio.speakLetterNameThenWord(item.letter, item.word)
+            }
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
         } else {
             audio.playSfx(Sfx.INCORRECT)
@@ -110,14 +122,20 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
             delay(900)
             feedback = AnswerFeedback.None
             lastWrongPair = null
-            if (matched.size == matchTargets.size) {
-                if (roundIndex == rounds.size - 1) {
-                    audio.playSfx(Sfx.HARVEST)
-                    finished = true
-                } else {
-                    roundIndex += 1
-                    matched = emptySet()
-                }
+        }
+    }
+
+    LaunchedEffect(matchAudioFinished) {
+        if (matchAudioFinished) {
+            delay(350)
+            matchAudioFinished = false
+            lockInput = false
+            if (roundIndex == rounds.size - 1) {
+                audio.playSfx(Sfx.HARVEST)
+                finished = true
+            } else {
+                roundIndex += 1
+                matched = emptySet()
             }
         }
     }
@@ -134,38 +152,44 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         onBack = onBack,
         onReplayInstructions = { instructions() },
         feedback = feedback,
-        audio = audio
+        audio = audio,
+        blockInputDuringAudio = false
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
             // Scale letters up well beyond the shared chip size for readability, but bound
             // by how much height PAIRS_PER_ROUND stacked chips can actually claim -- so the
             // enlargement never clips or pushes the last pair off a short landscape screen.
-            val reservedForHeader = if (metrics.compactHeight) 60.dp else 80.dp
+            val reservedForHeader = if (metrics.compactHeight) 48.dp else 70.dp
             val availableForChips = maxHeight - reservedForHeader
             val maxChipHeight = ((availableForChips - metrics.spacing * (PAIRS_PER_ROUND - 1)) / PAIRS_PER_ROUND)
                 .coerceAtLeast(metrics.chipSize)
-            val bigChipSize = (metrics.chipSize * 1.7f).coerceIn(metrics.chipSize, maxChipHeight)
-            val bigFontSize = (bigChipSize.value * 0.48f).sp
+            val bigChipSize = (metrics.chipSize * 1.35f).coerceIn(metrics.chipSize * 0.82f, maxChipHeight)
+            val bigFontSize = (bigChipSize.value * 0.5f).sp
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                    .padding(horizontal = 8.dp, vertical = if (metrics.compactHeight) 2.dp else 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Draw a line to connect each pair", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
+                Text(
+                    "Draw a line to connect each letter pair",
+                    style = if (metrics.compactHeight) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = if (metrics.compactHeight) 1.dp else 4.dp)
+                )
                 Text(
                     "Round ${roundIndex + 1} of ${rounds.size}",
                     style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = if (metrics.compactHeight) 1.dp else 4.dp)
                 )
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .padding(top = 4.dp)
+                        .padding(top = if (metrics.compactHeight) 0.dp else 4.dp)
                         .onGloballyPositioned { containerCoords = it }
                         .pointerInput(roundIndex, matched, bigChipSize) {
                             val hitRadius = maxOf(42.dp.toPx(), bigChipSize.toPx() * 0.8f)
@@ -179,10 +203,12 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
 
                         detectDragGestures(
                             onDragStart = { offset ->
+                                if (lockInput) return@detectDragGestures
                                 val nearest = chipPositions.entries
                                     .filter { (key, _) -> key in currentKeys && key.substring(2)[0].uppercaseChar() !in matched }
                                     .minByOrNull { (_, pos) -> (pos - offset).getDistance() }
                                 if (nearest != null && (nearest.value - offset).getDistance() < hitRadius) {
+                                    audio.stopPlayback()
                                     dragFromKey = nearest.key
                                     dragCurrentPos = offset
                                     audio.playLetterName(nearest.key.substring(2)[0])
@@ -223,7 +249,7 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                     ) {
                         Column(
                             modifier = Modifier.fillMaxHeight(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                            verticalArrangement = Arrangement.spacedBy(if (metrics.compactHeight) 4.dp else 8.dp, Alignment.CenterVertically),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             uppers.forEach { c ->
@@ -251,7 +277,7 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                         }
                         Column(
                             modifier = Modifier.fillMaxHeight(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                            verticalArrangement = Arrangement.spacedBy(if (metrics.compactHeight) 4.dp else 8.dp, Alignment.CenterVertically),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             lowers.forEach { c ->

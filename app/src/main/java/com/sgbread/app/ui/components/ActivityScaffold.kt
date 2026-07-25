@@ -48,6 +48,7 @@ fun ActivityScaffold(
     feedback: AnswerFeedback = AnswerFeedback.None,
     audio: AudioManager? = null,
     playFeedbackAudio: Boolean = true,
+    blockInputDuringAudio: Boolean = true,
     content: @Composable (PaddingValues) -> Unit
 ) {
     val isAudioPlaying by audio?.isPlaying?.collectAsStateWithLifecycle()
@@ -106,7 +107,7 @@ fun ActivityScaffold(
                     )
                 }
 
-                if (isAudioPlaying) {
+                if (isAudioPlaying && blockInputDuringAudio) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()

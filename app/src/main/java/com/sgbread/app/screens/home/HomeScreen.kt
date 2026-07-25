@@ -23,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,7 +32,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sgbread.app.R
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.ui.components.ArtworkHotspot
@@ -56,7 +54,6 @@ fun HomeScreen(
     onModuleSelected: (String) -> Unit,
     onProfileSelected: () -> Unit
 ) {
-    val isAudioPlaying by audio.isPlaying.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         audio.replaceWithRawResource(R.raw.intro, key = "home-intro-autoplay")
     }
@@ -65,10 +62,16 @@ fun HomeScreen(
     }
 
     HomeScreenContent(
-        selectorsEnabled = !isAudioPlaying,
+        selectorsEnabled = true,
         onPlayIntro = { audio.playRawResource(R.raw.intro, key = "home-intro") },
-        onModuleSelected = onModuleSelected,
-        onProfileSelected = onProfileSelected
+        onModuleSelected = { moduleId ->
+            audio.stopPlayback()
+            onModuleSelected(moduleId)
+        },
+        onProfileSelected = {
+            audio.stopPlayback()
+            onProfileSelected()
+        }
     )
 }
 

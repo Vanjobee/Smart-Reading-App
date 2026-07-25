@@ -17,7 +17,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,7 +24,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sgbread.app.R
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.data.ModuleInfo
@@ -42,7 +40,7 @@ private val MODE_1_HOTSPOTS = listOf(
 )
 
 private val MODE_2_HOTSPOTS = listOf(
-    ArtworkHotspot("listen_match", "Open Listen and Match", 145f, 830f, 795f, 1065f),
+    ArtworkHotspot("listen_match", "Open Phonics Match", 145f, 830f, 795f, 1065f),
     ArtworkHotspot("tap_letter", "Open Tap Letter", 145f, 1065f, 795f, 1300f),
     ArtworkHotspot("letter_hunt", "Open Letter Hunt", 145f, 1300f, 795f, 1540f)
 )
@@ -66,7 +64,6 @@ fun ModuleScreen(
     onProfileSelected: () -> Unit,
     onBack: () -> Unit
 ) {
-    val isAudioPlaying by audio.isPlaying.collectAsStateWithLifecycle()
     LaunchedEffect(module.id) {
         audio.replaceWithRecordedPrompt(module.title)
     }
@@ -76,10 +73,19 @@ fun ModuleScreen(
 
     ModuleScreenContent(
         module = module,
-        selectorsEnabled = !isAudioPlaying,
-        onActivitySelected = onActivitySelected,
-        onProfileSelected = onProfileSelected,
-        onBack = onBack
+        selectorsEnabled = true,
+        onActivitySelected = { route ->
+            audio.stopPlayback()
+            onActivitySelected(route)
+        },
+        onProfileSelected = {
+            audio.stopPlayback()
+            onProfileSelected()
+        },
+        onBack = {
+            audio.stopPlayback()
+            onBack()
+        }
     )
 }
 
@@ -132,7 +138,6 @@ private fun ModuleScreenContent(
 
         IconButton(
             onClick = onProfileSelected,
-            enabled = selectorsEnabled,
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
