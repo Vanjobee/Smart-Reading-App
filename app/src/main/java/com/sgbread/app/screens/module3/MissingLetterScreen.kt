@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -111,6 +112,7 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         val current = feedback
         if (current is AnswerFeedback.Correct) {
             delay(1100)
+            while (audio.isPlaying.value) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
                 audio.playSfx(Sfx.HARVEST)
@@ -257,37 +259,42 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(bottom = metrics.spacing)
                             )
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(metrics.gridSpacing, Alignment.CenterHorizontally),
-                                verticalArrangement = Arrangement.spacedBy(metrics.gridSpacing),
-                                maxItemsInEachRow = CHOICE_COUNT
-                            ) {
-                                choices.forEach { c ->
-                                    val isDragging = draggingLetter == c
-                                    LetterChip(
-                                        letter = c,
-                                        size = if (metrics.compactWidth || metrics.compactHeight) metrics.chipSize else metrics.choiceChipSize,
-                                        state = when {
-                                            isDragging -> ChoiceState.SELECTED
-                                            wrongLetter == c -> ChoiceState.WRONG
-                                            else -> ChoiceState.IDLE
-                                        },
-                                        modifier = Modifier
-                                            .onGloballyPositioned { coords ->
-                                                if (c == draggingLetter) return@onGloballyPositioned
-                                                val container = containerCoords ?: return@onGloballyPositioned
-                                                val center = Offset(coords.size.width / 2f, coords.size.height / 2f)
-                                                chipPositions[c] = container.localPositionOf(coords, center)
-                                            }
-                                            .then(
-                                                if (isDragging) {
-                                                    Modifier.offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }
-                                                } else {
-                                                    Modifier
+                            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                                val rowSpacing = metrics.gridSpacing
+                                val maxChoiceSize = ((maxWidth - rowSpacing * (CHOICE_COUNT - 1)) / CHOICE_COUNT)
+                                    .coerceAtMost(metrics.choiceChipSize)
+                                    .coerceAtLeast(44.dp)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(rowSpacing, Alignment.CenterHorizontally),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    choices.forEach { c ->
+                                        val isDragging = draggingLetter == c
+                                        LetterChip(
+                                            letter = c,
+                                            size = maxChoiceSize,
+                                            state = when {
+                                                isDragging -> ChoiceState.SELECTED
+                                                wrongLetter == c -> ChoiceState.WRONG
+                                                else -> ChoiceState.IDLE
+                                            },
+                                            modifier = Modifier
+                                                .onGloballyPositioned { coords ->
+                                                    if (c == draggingLetter) return@onGloballyPositioned
+                                                    val container = containerCoords ?: return@onGloballyPositioned
+                                                    val center = Offset(coords.size.width / 2f, coords.size.height / 2f)
+                                                    chipPositions[c] = container.localPositionOf(coords, center)
                                                 }
-                                            )
-                                    )
+                                                .then(
+                                                    if (isDragging) {
+                                                        Modifier.offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }
+                                                    } else {
+                                                        Modifier
+                                                    }
+                                                )
+                                        )
+                                    }
                                 }
                             }
                         }

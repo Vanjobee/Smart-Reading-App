@@ -98,6 +98,7 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         val current = feedback
         if (current is AnswerFeedback.Correct) {
             delay(1200)
+            while (audio.isPlaying.value) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
                 audio.playSfx(Sfx.HARVEST)

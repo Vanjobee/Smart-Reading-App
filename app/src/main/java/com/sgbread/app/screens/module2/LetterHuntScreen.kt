@@ -167,6 +167,7 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
     LaunchedEffect(feedback) {
         if (feedback is AnswerFeedback.Correct) {
             delay(1200)
+            while (audio.isPlaying.value) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == huntRounds.lastIndex) {
                 audio.playSfx(Sfx.HARVEST)

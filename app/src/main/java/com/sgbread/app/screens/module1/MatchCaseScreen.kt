@@ -127,7 +127,8 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
 
     LaunchedEffect(matchAudioFinished) {
         if (matchAudioFinished) {
-            delay(350)
+            delay(1450)
+            while (audio.isPlaying.value) delay(100)
             matchAudioFinished = false
             lockInput = false
             if (roundIndex == rounds.size - 1) {
