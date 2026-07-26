@@ -416,6 +416,17 @@ class AudioManager private constructor(context: Context) {
         enqueue(requests, debounce = false)
     }
 
+    /** Plays recorded letter sounds followed by a specific recorded word resource. */
+    fun playLettersThenRawWord(word: String, wordResourceId: Int, key: String, rate: Float = 1f) {
+        val requests = word.map { letter ->
+            val normalized = letter.uppercaseChar()
+            letterSoundIds[normalized]?.let {
+                PlaybackRequest.Recorded(it, "letter-sound:$normalized", rate)
+            } ?: resolvePrompt(normalized.toString(), rate)
+        } + PlaybackRequest.Recorded(wordResourceId, key, rate)
+        enqueue(requests, debounce = false)
+    }
+
     /** Plays a word with fallback, then a recorded praise line without TTS. */
     fun playWordThenRecorded(
         word: String,

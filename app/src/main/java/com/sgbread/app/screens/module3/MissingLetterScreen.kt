@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.data.BlendWord
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.Praise
 import com.sgbread.app.ui.components.ActivityCompleteOverlay
@@ -94,7 +95,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
         (distractors + missingLetter).distinct().shuffled()
     }
 
-    fun speakPrompt() = audio?.playWord(round.word, rate = 0.85f)
+    fun speakPrompt() = audio.playBlendWord(round, rate = 0.85f)
 
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
@@ -245,7 +246,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                                         .padding(bottom = metrics.spacing)
                                         .clickable {
                                             audio?.stopPlayback()
-                                            audio?.playWord(round.word, rate = 0.9f)
+                                            audio.playBlendWord(round, rate = 0.9f)
                                         },
                                     contentScale = ContentScale.Fit
                                 )
@@ -257,7 +258,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                                         .padding(bottom = metrics.spacing)
                                         .clickable {
                                             audio?.stopPlayback()
-                                            audio?.playWord(round.word, rate = 0.9f)
+                                            audio.playBlendWord(round, rate = 0.9f)
                                         }
                                 )
                             }
@@ -354,6 +355,19 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
         if (finished) {
             ActivityCompleteOverlay(onContinue = onComplete)
         }
+    }
+}
+
+private fun AudioManager?.playBlendWord(
+    word: BlendWord,
+    rate: Float = 1f,
+    onComplete: (() -> Unit)? = null
+) {
+    val wordAudio = word.audio
+    if (wordAudio != null) {
+        this?.playRawResource(wordAudio, "blend-word:${word.word}", onComplete)
+    } else {
+        this?.playWord(word.word, rate, onComplete)
     }
 }
 

@@ -53,8 +53,6 @@ import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.SoilBrown
 import kotlinx.coroutines.delay
 
-private val BLENDING_MATCH_EXCLUDED_WORDS = setOf("rice", "goat")
-
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
@@ -62,7 +60,7 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
     val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
 
     val matchWords = remember {
-        LettersBank.blendWords.filter { it.word.length == 3 && it.word !in BLENDING_MATCH_EXCLUDED_WORDS }
+        LettersBank.blendWords.filter { it.word.length == 3 }
     }
     val rounds = remember { matchWords.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
@@ -75,14 +73,20 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
 
     val round = rounds[roundIndex]
     val choices = remember(roundIndex) {
-        val distractors = matchWords
+        val sameFirstLetter = matchWords
             .filter { it.word != round.word }
+            .filter { it.word.firstOrNull() == round.word.firstOrNull() }
             .shuffled()
+        val fallback = matchWords
+            .filter { it.word != round.word && it !in sameFirstLetter }
+            .shuffled()
+        val distractors = (sameFirstLetter.take(2) + fallback)
+            .distinctBy { it.word }
             .take(2)
         (distractors + round).shuffled()
     }
 
-    fun speakPrompt() = audio?.playWord(round.word, rate = 0.9f)
+    fun speakPrompt() = audio.playBlendWord(round, rate = 0.9f)
 
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
@@ -106,14 +110,14 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
             wrongWord = null
             correctWord = choice.word
             roundLocked = true
-            audio?.playWord(choice.word, rate = 0.9f) {
+            audio.playBlendWord(choice, rate = 0.9f) {
                 pendingPraise = true
             }
         } else {
             correctWord = null
             wrongWord = choice.word
-            audio?.playWord(choice.word, rate = 0.9f) {
-                audio.playSfx(Sfx.INCORRECT)
+            audio.playBlendWord(choice, rate = 0.9f) {
+                audio?.playSfx(Sfx.INCORRECT)
                 feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
             }
         }
@@ -250,6 +254,19 @@ private fun choiceState(word: String, correctWord: String?, wrongWord: String?):
     correctWord -> ChoiceState.CORRECT
     wrongWord -> ChoiceState.WRONG
     else -> ChoiceState.IDLE
+}
+
+private fun AudioManager?.playBlendWord(
+    word: BlendWord,
+    rate: Float = 1f,
+    onComplete: (() -> Unit)? = null
+) {
+    val wordAudio = word.audio
+    if (wordAudio != null) {
+        this?.playRawResource(wordAudio, "blend-word:${word.word}", onComplete)
+    } else {
+        this?.playWord(word.word, rate, onComplete)
+    }
 }
 
 @Composable

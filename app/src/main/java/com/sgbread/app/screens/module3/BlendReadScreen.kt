@@ -44,8 +44,6 @@ import com.sgbread.app.ui.theme.CreamWhite
 import com.sgbread.app.ui.theme.SgbReadTheme
 import kotlinx.coroutines.delay
 
-private val BLEND_READ_EXCLUDED_WORDS = setOf("goat", "rice")
-
 @OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -54,7 +52,7 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
 
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val blendItems = remember { LettersBank.blendWords.filter { it.word.length == 3 && it.word !in BLEND_READ_EXCLUDED_WORDS } }
+    val blendItems = remember { LettersBank.blendWords.filter { it.word.length == 3 } }
     val rounds = remember { blendItems.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
@@ -69,7 +67,12 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     }
 
     fun speakPrompt() {
-        audio?.playLettersThenWord(round.word, rate = 0.8f)
+        val wordAudio = round.audio
+        if (wordAudio != null) {
+            audio?.playLettersThenRawWord(round.word, wordAudio, "blend-word:${round.word}", rate = 0.8f)
+        } else {
+            audio?.playLettersThenWord(round.word, rate = 0.8f)
+        }
     }
 
     var hasIntroduced by remember { mutableStateOf(false) }
@@ -93,13 +96,13 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
         if (choice.word == round.word) {
             wrongWord = null
             correctWord = choice.word
-            audio?.playWord(choice.word, rate = 0.9f) {
+            audio.playBlendWord(choice, rate = 0.9f) {
                 pendingPraise = true
             }
         } else {
             correctWord = null
-            audio?.playWord(choice.word, rate = 0.9f) {
-                audio.playSfx(Sfx.INCORRECT)
+            audio.playBlendWord(choice, rate = 0.9f) {
+                audio?.playSfx(Sfx.INCORRECT)
                 wrongWord = choice.word
                 feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
             }
@@ -242,6 +245,19 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
         if (finished) {
             ActivityCompleteOverlay(onContinue = onComplete)
         }
+    }
+}
+
+private fun AudioManager?.playBlendWord(
+    word: BlendWord,
+    rate: Float = 1f,
+    onComplete: (() -> Unit)? = null
+) {
+    val wordAudio = word.audio
+    if (wordAudio != null) {
+        this?.playRawResource(wordAudio, "blend-word:${word.word}", onComplete)
+    } else {
+        this?.playWord(word.word, rate, onComplete)
     }
 }
 
