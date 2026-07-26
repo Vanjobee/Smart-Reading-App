@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.sgbread.app.R
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
 import com.sgbread.app.data.FarmIconKey
@@ -86,10 +87,10 @@ private data class TraceLetterItem(
 )
 
 private fun PhonicsItem.toTraceLetterItem(): TraceLetterItem =
-    if (letter == 'R' && word == "rice") {
-        TraceLetterItem(letter = 'R', word = "rat", icon = FarmIconKey.RAT)
-    } else {
-        TraceLetterItem(letter = letter, word = word, image = image)
+    when {
+        letter == 'G' && word == "goat" -> TraceLetterItem(letter = 'G', word = "grass", image = R.drawable.grass)
+        letter == 'R' && word == "rice" -> TraceLetterItem(letter = 'R', word = "rat", icon = FarmIconKey.RAT)
+        else -> TraceLetterItem(letter = letter, word = word, image = image)
     }
 
 private fun buildGlyphMask(glyph: String, width: Float, height: Float): GlyphMask? {

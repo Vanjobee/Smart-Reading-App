@@ -44,7 +44,7 @@ object Modules {
     val module3 = ModuleInfo(
         id = "module3",
         number = 3,
-        title = "Blending (CVC Words)",
+        title = "Blending",
         icon = FarmIconKey.SPROUT_GROWING,
         activities = listOf(
             ActivityInfo("m3a2", "Supply the Missing Letter", "Complete the missing letter", "missing_letter"),
