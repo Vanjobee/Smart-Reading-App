@@ -35,7 +35,8 @@ object Routes {
 fun SgbNavGraph(
     navController: NavHostController = rememberNavController(),
     progressViewModel: ProgressViewModel,
-    audio: AudioManager
+    audio: AudioManager,
+    onExit: () -> Unit
 ) {
     NavHost(navController = navController, startDestination = Routes.HOME) {
 
@@ -43,13 +44,15 @@ fun SgbNavGraph(
             HomeScreen(
                 audio = audio,
                 onModuleSelected = { moduleId -> navController.navigate(Routes.module(moduleId)) },
-                onProfileSelected = { navController.navigate(Routes.PROFILE) }
+                onProfileSelected = { navController.navigate(Routes.PROFILE) },
+                onExit = onExit
             )
         }
 
         composable(Routes.PROFILE) {
             ProfileScreen(
                 progressViewModel = progressViewModel,
+                audio = audio,
                 onBack = { navController.popBackStack() }
             )
         }

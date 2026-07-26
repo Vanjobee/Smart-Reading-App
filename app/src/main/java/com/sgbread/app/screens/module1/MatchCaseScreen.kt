@@ -1,7 +1,9 @@
 package com.sgbread.app.screens.module1
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,11 +25,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,6 +47,7 @@ import com.sgbread.app.ui.components.ChoiceState
 import com.sgbread.app.ui.components.LetterChip
 import com.sgbread.app.ui.components.PictureChoiceCard
 import com.sgbread.app.ui.components.activityLayoutMetrics
+import com.sgbread.app.ui.theme.CreamWhite
 import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.SunOrange
 import kotlinx.coroutines.delay
@@ -60,8 +64,12 @@ private val MATCH_CASE_EXCLUDED_WORDS = setOf("goat", "rice")
  * classic "draw a line to connect" workbook exercise. Split into rounds of
  * [PAIRS_PER_ROUND] pairs so the board never gets too crowded to scan.
  */
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+fun MatchCaseScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
     // Freshly shuffled each time the screen is entered, so replays don't always start on A-C.
     val rounds = remember {
         LettersBank.phonicsItems
@@ -92,7 +100,7 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     val chipPositions = remember { mutableMapOf<String, Offset>() }
     var containerCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
-    fun instructions() = audio.playRecordedPrompt(
+    fun instructions() = audio?.playRecordedPrompt(
         "Drag a line from each capital letter to its lowercase pair.",
         rate = 0.9f
     )
@@ -102,7 +110,7 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         if (lockInput) return
         val base = upper.uppercaseChar()
         if (base == lower.uppercaseChar()) {
-            audio.playSfx(Sfx.CORRECT)
+            audio?.playSfx(Sfx.CORRECT)
             val updatedMatched = matched + base
             matched = updatedMatched
             val item = matchTargets.first { it.letter.uppercaseChar() == base }
@@ -110,15 +118,15 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
             if (updatedMatched.size == matchTargets.size) {
                 lockInput = true
                 matchAudioFinished = false
-                audio.speakLetterNameThenWord(item.letter, item.word) {
+                audio?.speakLetterNameThenWord(item.letter, item.word) {
                     matchAudioFinished = true
                 }
             } else {
-                audio.speakLetterNameThenWord(item.letter, item.word)
+                audio?.speakLetterNameThenWord(item.letter, item.word)
             }
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
         } else {
-            audio.playSfx(Sfx.INCORRECT)
+            audio?.playSfx(Sfx.INCORRECT)
             lastWrongPair = upper to lower
             feedback = AnswerFeedback.Incorrect("Try again!")
         }
@@ -135,11 +143,11 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     LaunchedEffect(matchAudioFinished) {
         if (matchAudioFinished) {
             delay(1150)
-            while (audio.isPlaying.value) delay(100)
+            while (audio?.isPlaying?.value == true) delay(100)
             matchAudioFinished = false
             lockInput = false
             if (roundIndex == rounds.size - 1) {
-                audio.playSfx(Sfx.HARVEST)
+                audio?.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 roundIndex += 1
@@ -156,15 +164,21 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     }
 
     ActivityScaffold(
-        title = "Match Upper & Lowercase",
+        title = "Letter Match",
         onBack = onBack,
         onReplayInstructions = { instructions() },
         feedback = feedback,
         audio = audio,
-        blockInputDuringAudio = false
+        blockInputDuringAudio = false,
+        titleTextScale = responsiveTextScale
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
             // Scale letters up well beyond the shared chip size for readability, but bound
             // by how much height PAIRS_PER_ROUND stacked chips can actually claim -- so the
             // enlargement never clips or pushes the last pair off a short landscape screen.
@@ -183,13 +197,29 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
             ) {
                 Text(
                     "Draw a line to connect each letter pair",
-                    style = if (metrics.compactHeight) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
+                    style = (
+                        if (metrics.compactHeight) {
+                            MaterialTheme.typography.titleSmall
+                        } else {
+                            MaterialTheme.typography.titleMedium
+                        }
+                    ).let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = if (metrics.compactHeight) 1.dp else 4.dp)
                 )
                 Text(
                     "Round ${roundIndex + 1} of ${rounds.size}",
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     modifier = Modifier.padding(bottom = if (metrics.compactHeight) 1.dp else 4.dp)
                 )
 
@@ -216,10 +246,10 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                                     .filter { (key, _) -> key in currentKeys && key.substring(2)[0].uppercaseChar() !in matched }
                                     .minByOrNull { (_, pos) -> (pos - offset).getDistance() }
                                 if (nearest != null && (nearest.value - offset).getDistance() < hitRadius) {
-                                    audio.stopPlayback()
+                                    audio?.stopPlayback()
                                     dragFromKey = nearest.key
                                     dragCurrentPos = offset
-                                    audio.playLetterName(nearest.key.substring(2)[0])
+                                    audio?.playLetterName(nearest.key.substring(2)[0])
                                 }
                             },
                             onDrag = { _, dragAmount ->
@@ -345,6 +375,6 @@ fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
 @Composable
 private fun MatchCaseScreenPreview() {
     SgbReadTheme {
-        MatchCaseScreen(audio = AudioManager.getInstance(LocalContext.current), onComplete = {}, onBack = {})
+        MatchCaseScreen(audio = null, onComplete = {}, onBack = {})
     }
 }

@@ -1,5 +1,6 @@
 package com.sgbread.app.screens.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,12 +18,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,10 +44,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sgbread.app.R
 import com.sgbread.app.audio.AudioManager
+import com.sgbread.app.audio.Sfx
 import com.sgbread.app.ui.components.ArtworkHotspot
 import com.sgbread.app.ui.components.ArtworkHotspotOverlay
 import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.CreamWhite
+import com.sgbread.app.ui.theme.IncorrectRed
 import com.sgbread.app.ui.theme.SunYellow
 import com.sgbread.app.ui.theme.TextBrown
 
@@ -53,8 +64,15 @@ private val HOME_HOTSPOTS = listOf(
 fun HomeScreen(
     audio: AudioManager,
     onModuleSelected: (String) -> Unit,
-    onProfileSelected: () -> Unit
+    onProfileSelected: () -> Unit,
+    onExit: () -> Unit
 ) {
+    var showExitConfirmation by remember { mutableStateOf(false) }
+
+    BackHandler {
+        showExitConfirmation = true
+    }
+
     LaunchedEffect(Unit) {
         audio.replaceWithRawResource(R.raw.intro, key = "home-intro-autoplay")
     }
@@ -62,21 +80,56 @@ fun HomeScreen(
         onDispose { audio.stopPlayback() }
     }
 
+    fun playTapAndRun(action: () -> Unit) {
+        audio.stopPlayback()
+        audio.playSfx(Sfx.TAP)
+        action()
+    }
+
     HomeScreenContent(
         selectorsEnabled = true,
         onPlayIntro = {
-            audio.stopPlayback()
-            audio.playRawResource(R.raw.intro, key = "home-intro")
+            playTapAndRun {
+                audio.playRawResource(R.raw.intro, key = "home-intro")
+            }
         },
         onModuleSelected = { moduleId ->
-            audio.stopPlayback()
-            onModuleSelected(moduleId)
+            playTapAndRun { onModuleSelected(moduleId) }
         },
         onProfileSelected = {
-            audio.stopPlayback()
-            onProfileSelected()
+            playTapAndRun(onProfileSelected)
         }
     )
+
+    if (showExitConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmation = false },
+            title = { Text("Exit SGB-READ?") },
+            text = { Text("Are you sure you want to exit the app?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExitConfirmation = false
+                        audio.stopPlayback()
+                        audio.playSfx(Sfx.TAP) {
+                            audio.stopBackgroundMusic()
+                            onExit()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = IncorrectRed)
+                ) {
+                    Text("Exit", color = CreamWhite)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { playTapAndRun { showExitConfirmation = false } }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable

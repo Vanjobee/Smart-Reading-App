@@ -33,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sgbread.app.R
 import com.sgbread.app.audio.AudioManager
+import com.sgbread.app.audio.Sfx
 import com.sgbread.app.data.ModuleInfo
 import com.sgbread.app.ui.components.ArtworkHotspot
 import com.sgbread.app.ui.components.ArtworkHotspotOverlay
@@ -79,20 +80,23 @@ fun ModuleScreen(
         onDispose { audio.stopPlayback() }
     }
 
+    fun playTapAndRun(action: () -> Unit) {
+        audio.stopPlayback()
+        audio.playSfx(Sfx.TAP)
+        action()
+    }
+
     ModuleScreenContent(
         module = module,
         selectorsEnabled = true,
         onActivitySelected = { route ->
-            audio.stopPlayback()
-            onActivitySelected(route)
+            playTapAndRun { onActivitySelected(route) }
         },
         onProfileSelected = {
-            audio.stopPlayback()
-            onProfileSelected()
+            playTapAndRun(onProfileSelected)
         },
         onBack = {
-            audio.stopPlayback()
-            onBack()
+            playTapAndRun(onBack)
         }
     )
 }

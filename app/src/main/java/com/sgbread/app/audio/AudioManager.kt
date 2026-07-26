@@ -146,7 +146,7 @@ class AudioManager private constructor(context: Context) {
     private val soundResources: Map<Sfx, Int> = mapOf(
         Sfx.CORRECT to R.raw.sfx_correct,
         Sfx.INCORRECT to R.raw.sfx_incorrect,
-        Sfx.TAP to R.raw.sfx_tap,
+        Sfx.TAP to R.raw.tap,
         Sfx.HARVEST to R.raw.sfx_harvest
     )
 
@@ -205,6 +205,7 @@ class AudioManager private constructor(context: Context) {
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
     private var currentPlayer: MediaPlayer? = null
     private var backgroundMusicPlayer: MediaPlayer? = null
+    private var writingSoundPlayer: MediaPlayer? = null
     private var activeRequest: PlaybackRequest? = null
     private var playbackActive = false
     private var ttsReady = false
@@ -319,9 +320,36 @@ class AudioManager private constructor(context: Context) {
         mainHandler.post { stopBackgroundMusicNow() }
     }
 
-    fun playSfx(sfx: Sfx) {
+    /** Loops the pencil sound while the learner's finger is tracing. */
+    fun startWritingSound() {
+        mainHandler.post {
+            val existing = writingSoundPlayer
+            if (existing != null) {
+                if (!existing.isPlaying) runCatching { existing.start() }
+                return@post
+            }
+
+            val player = MediaPlayer.create(appContext, R.raw.writing, audioAttributes, 0)
+                ?: return@post
+            writingSoundPlayer = player
+            player.isLooping = true
+            player.setVolume(WRITING_SOUND_VOLUME, WRITING_SOUND_VOLUME)
+            player.setOnErrorListener { failedPlayer, _, _ ->
+                failedPlayer.release()
+                if (writingSoundPlayer === failedPlayer) writingSoundPlayer = null
+                true
+            }
+            runCatching { player.start() }
+        }
+    }
+
+    fun stopWritingSound() {
+        mainHandler.post { stopWritingSoundNow() }
+    }
+
+    fun playSfx(sfx: Sfx, onComplete: (() -> Unit)? = null) {
         val resourceId = soundResources[sfx] ?: return
-        enqueue(listOf(PlaybackRequest.Recorded(resourceId, "sfx:$sfx")))
+        enqueue(listOf(PlaybackRequest.Recorded(resourceId, "sfx:$sfx", onComplete = onComplete)))
     }
 
     /** Plays the recorded native pronunciation of [letter]'s sound. */
@@ -565,6 +593,7 @@ class AudioManager private constructor(context: Context) {
         playbackQueue.clear()
         activeRequest = null
         playbackActive = false
+        stopWritingSoundNow()
         currentPlayer?.setOnCompletionListener(null)
         currentPlayer?.setOnErrorListener(null)
         runCatching { currentPlayer?.stop() }
@@ -575,6 +604,13 @@ class AudioManager private constructor(context: Context) {
         }
         recognizer.cancel()
         _isPlaying.value = false
+    }
+
+    private fun stopWritingSoundNow() {
+        writingSoundPlayer?.setOnErrorListener(null)
+        runCatching { writingSoundPlayer?.stop() }
+        writingSoundPlayer?.release()
+        writingSoundPlayer = null
     }
 
     private fun stopBackgroundMusicNow() {
@@ -638,7 +674,8 @@ class AudioManager private constructor(context: Context) {
         private val RESERVED_RESOURCE_NAMES = setOf("this")
         private const val PLAYBACK_GAP_MS = 90L
         private const val DEBOUNCE_MS = 250L
-        private const val BACKGROUND_MUSIC_VOLUME = 0.16f
+        private const val BACKGROUND_MUSIC_VOLUME = 0.025f
+        private const val WRITING_SOUND_VOLUME = 0.35f
         private const val LESSON_AUDIO_VOLUME = 1.0f
 
         fun getInstance(context: Context): AudioManager =
