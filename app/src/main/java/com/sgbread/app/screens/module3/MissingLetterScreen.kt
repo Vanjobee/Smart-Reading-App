@@ -1,6 +1,8 @@
 package com.sgbread.app.screens.module3
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -26,12 +28,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.sgbread.app.audio.AudioManager
@@ -46,6 +52,8 @@ import com.sgbread.app.ui.components.LetterChip
 import com.sgbread.app.ui.components.TwoPaneActivityBody
 import com.sgbread.app.ui.components.activityLayoutMetrics
 import com.sgbread.app.ui.icons.FarmIcon
+import com.sgbread.app.ui.theme.CreamWhite
+import com.sgbread.app.ui.theme.SgbReadTheme
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -53,8 +61,12 @@ private const val DROP_HIT_RADIUS_DP = 44
 private const val CHOICE_COUNT = 4
 
 @OptIn(ExperimentalLayoutApi::class)
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
     // Freshly shuffled each time the screen is entered, not just once per app launch.
     val rounds = remember { LettersBank.blendWords.filter { it.word.length == 3 }.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
@@ -82,7 +94,7 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         (distractors + missingLetter).distinct().shuffled()
     }
 
-    fun speakPrompt() = audio.playWord(round.word, rate = 0.85f)
+    fun speakPrompt() = audio?.playWord(round.word, rate = 0.85f)
 
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
@@ -90,7 +102,7 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         filledLetter = null
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Which letter is missing?") {
+            audio?.playRecordedPrompt("Which letter is missing?") {
                 speakPrompt()
             }
             return@LaunchedEffect
@@ -102,10 +114,10 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         if (letter == missingLetter) {
             wrongLetter = null
             filledLetter = letter
-            audio.playSfx(Sfx.CORRECT)
+            audio?.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
         } else {
-            audio.playSfx(Sfx.INCORRECT)
+            audio?.playSfx(Sfx.INCORRECT)
             wrongLetter = letter
             feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
         }
@@ -115,10 +127,10 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         val current = feedback
         if (current is AnswerFeedback.Correct) {
             delay(850)
-            while (audio.isPlaying.value) delay(100)
+            while (audio?.isPlaying?.value == true) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
-                audio.playSfx(Sfx.HARVEST)
+                audio?.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 roundIndex += 1
@@ -126,19 +138,26 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         } else if (current is AnswerFeedback.Incorrect) {
             delay(750)
             feedback = AnswerFeedback.None
+            wrongLetter = null
         }
     }
 
     ActivityScaffold(
-        title = "Supply the Missing Letter",
+        title = "Fill in the Letter",
         onBack = onBack,
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
         audio = audio,
-        blockInputDuringAudio = false
+        blockInputDuringAudio = false,
+        titleTextScale = responsiveTextScale
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -148,7 +167,12 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
             ) {
                 Text(
                     "Word ${roundIndex + 1} of ${rounds.size}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     modifier = Modifier.padding(bottom = metrics.spacing)
                 )
 
@@ -166,10 +190,10 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                                     if (filledLetter != null) return@detectDragGestures
                                     val nearest = chipPositions.entries.minByOrNull { (_, pos) -> (pos - offset).getDistance() }
                                     if (nearest != null && (nearest.value - offset).getDistance() < hitRadius) {
-                                        audio.stopPlayback()
+                                        audio?.stopPlayback()
                                         draggingLetter = nearest.key
                                         dragOffset = Offset.Zero
-                                        audio.playLetterSound(nearest.key)
+                                        audio?.playLetterSound(nearest.key)
                                     }
                                 },
                                 onDrag = { _, dragAmount ->
@@ -214,8 +238,8 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                                         .size(metrics.largePictureSize)
                                         .padding(bottom = metrics.spacing)
                                         .clickable {
-                                            audio.stopPlayback()
-                                            audio.playWord(round.word, rate = 0.9f)
+                                            audio?.stopPlayback()
+                                            audio?.playWord(round.word, rate = 0.9f)
                                         },
                                     contentScale = ContentScale.Fit
                                 )
@@ -226,8 +250,8 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                                         .size(metrics.largePictureSize)
                                         .padding(bottom = metrics.spacing)
                                         .clickable {
-                                            audio.stopPlayback()
-                                            audio.playWord(round.word, rate = 0.9f)
+                                            audio?.stopPlayback()
+                                            audio?.playWord(round.word, rate = 0.9f)
                                         }
                                 )
                             }
@@ -264,9 +288,17 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                         choices = {
                             Text(
                                 "Drag the missing beginning or ending letter",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                                    baseStyle.copy(
+                                        color = CreamWhite,
+                                        fontSize = baseStyle.fontSize * responsiveTextScale
+                                    )
+                                },
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = metrics.spacing)
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = metrics.spacing)
                             )
                             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                                 val rowSpacing = metrics.gridSpacing
@@ -316,5 +348,13 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         if (finished) {
             ActivityCompleteOverlay(onContinue = onComplete)
         }
+    }
+}
+
+@Preview(device = "spec:width=360dp,height=800dp,orientation=portrait", showBackground = true)
+@Composable
+private fun MissingLetterScreenPreview() {
+    SgbReadTheme {
+        MissingLetterScreen(audio = null, onComplete = {}, onBack = {})
     }
 }

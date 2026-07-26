@@ -1,6 +1,9 @@
 package com.sgbread.app.screens.module3
 
+import android.annotation.SuppressLint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -19,8 +22,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sgbread.app.audio.AudioManager
@@ -36,14 +41,19 @@ import com.sgbread.app.ui.components.LetterChip
 import com.sgbread.app.ui.components.PictureChoiceCard
 import com.sgbread.app.ui.components.TwoPaneActivityBody
 import com.sgbread.app.ui.components.activityLayoutMetrics
+import com.sgbread.app.ui.theme.CreamWhite
 import com.sgbread.app.ui.theme.SgbReadTheme
 import kotlinx.coroutines.delay
 
 private val BLEND_READ_EXCLUDED_WORDS = setOf("goat", "rice")
 
 @OptIn(ExperimentalLayoutApi::class)
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
     // Freshly shuffled each time the screen is entered, not just once per app launch.
     val blendItems = remember { LettersBank.blendWords.filter { it.word.length == 3 && it.word !in BLEND_READ_EXCLUDED_WORDS } }
     val rounds = remember { blendItems.shuffled().take(10) }
@@ -60,7 +70,7 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     }
 
     fun speakPrompt() {
-        audio.playLettersThenWord(round.word, rate = 0.8f)
+        audio?.playLettersThenWord(round.word, rate = 0.8f)
     }
 
     var hasIntroduced by remember { mutableStateOf(false) }
@@ -69,7 +79,7 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         correctWord = null
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Listen to the sounds blend them!") {
+            audio?.playRecordedPrompt("Listen to the sounds blend them!") {
                 speakPrompt()
             }
             return@LaunchedEffect
@@ -80,17 +90,17 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     fun onPick(choice: BlendWord) {
         // Every card speaks its own word on tap, whether or not it's the right answer --
         // lets the child explore/hear all the choices, not just the one they land on.
-        audio.stopPlayback()
+        audio?.stopPlayback()
         if (choice.word == round.word) {
             wrongWord = null
             correctWord = choice.word
-            audio.playWord(choice.word, rate = 0.9f) {
+            audio?.playWord(choice.word, rate = 0.9f) {
                 pendingPraise = true
             }
         } else {
             correctWord = null
-            audio.playWord(choice.word, rate = 0.9f) {
-                audio.playSfx(Sfx.INCORRECT)
+            audio?.playWord(choice.word, rate = 0.9f) {
+                audio?.playSfx(Sfx.INCORRECT)
                 wrongWord = choice.word
                 feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
             }
@@ -100,7 +110,7 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
             delay(250)
-            audio.playSfx(Sfx.CORRECT)
+            audio?.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
         }
@@ -110,10 +120,10 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         val current = feedback
         if (current is AnswerFeedback.Correct) {
             delay(850)
-            while (audio.isPlaying.value) delay(100)
+            while (audio?.isPlaying?.value == true) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
-                audio.playSfx(Sfx.HARVEST)
+                audio?.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 roundIndex += 1
@@ -121,6 +131,7 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         } else if (current is AnswerFeedback.Incorrect) {
             delay(750)
             feedback = AnswerFeedback.None
+            wrongWord = null
         }
     }
 
@@ -130,10 +141,16 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
         audio = audio,
-        blockInputDuringAudio = false
+        blockInputDuringAudio = false,
+        titleTextScale = responsiveTextScale
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -141,12 +158,28 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                     .padding(horizontal = metrics.horizontalPadding, vertical = metrics.verticalPadding),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Word ${roundIndex + 1} of ${rounds.size}", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Word ${roundIndex + 1} of ${rounds.size}",
+                    style = MaterialTheme.typography.bodyMedium.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    }
+                )
                 Text(
                     "Tap each letter sound, blend the word, then choose the picture",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = metrics.spacing)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = metrics.spacing)
                 )
                 TwoPaneActivityBody(
                     metrics = metrics,
@@ -161,15 +194,20 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                                     letter = c.uppercaseChar(),
                                     size = metrics.chipSize,
                                     onClick = {
-                                        audio.stopPlayback()
-                                        audio.playLetterSound(c)
+                                        audio?.stopPlayback()
+                                        audio?.playLetterSound(c)
                                     }
                                 )
                             }
                         }
                         Text(
                             round.word,
-                            style = MaterialTheme.typography.headlineMedium,
+                            style = MaterialTheme.typography.headlineMedium.let { baseStyle ->
+                                baseStyle.copy(
+                                    color = CreamWhite,
+                                    fontSize = baseStyle.fontSize * responsiveTextScale
+                                )
+                            },
                             fontWeight = FontWeight.ExtraBold,
                             modifier = Modifier.padding(top = metrics.gridSpacing)
                         )
@@ -211,6 +249,6 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
 @Composable
 private fun BlendReadScreenPreview() {
     SgbReadTheme {
-        BlendReadScreen(audio = AudioManager.getInstance(LocalContext.current), onComplete = {}, onBack = {})
+        BlendReadScreen(audio = null, onComplete = {}, onBack = {})
     }
 }

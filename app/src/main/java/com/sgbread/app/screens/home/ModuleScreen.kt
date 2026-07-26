@@ -1,27 +1,21 @@
 package com.sgbread.app.screens.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +33,6 @@ import com.sgbread.app.ui.components.ArtworkHotspot
 import com.sgbread.app.ui.components.ArtworkHotspotOverlay
 import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.CreamWhite
-import com.sgbread.app.ui.theme.RiceGreenDark
 import com.sgbread.app.ui.theme.TextBrown
 
 private val MODE_1_HOTSPOTS = listOf(
@@ -55,8 +48,9 @@ private val MODE_2_HOTSPOTS = listOf(
 )
 
 private val MODE_3_HOTSPOTS = listOf(
-    ArtworkHotspot("missing_letter", "Open Fill in the Letter", 160f, 820f, 780f, 1225f),
-    ArtworkHotspot("blend_read", "Open Blend and Read", 165f, 1225f, 780f, 1565f)
+    ArtworkHotspot("missing_letter", "Open Fill in the Letter", 160f, 820f, 780f, 1068f),
+    ArtworkHotspot("blend_read", "Open Blend and Read", 160f, 1068f, 780f, 1316f),
+    ArtworkHotspot("blending_match", "Open Blending Match", 160f, 1316f, 780f, 1565f)
 )
 
 private val MODE_4_HOTSPOTS = listOf(
@@ -76,14 +70,15 @@ fun ModuleScreen(
     LaunchedEffect(module.id) {
         audio.replaceWithRecordedPrompt(module.title)
     }
-    DisposableEffect(audio, module.id) {
-        onDispose { audio.stopPlayback() }
-    }
 
     fun playTapAndRun(action: () -> Unit) {
         audio.stopPlayback()
         audio.playSfx(Sfx.TAP)
         action()
+    }
+
+    BackHandler {
+        playTapAndRun(onBack)
     }
 
     ModuleScreenContent(
@@ -160,31 +155,6 @@ private fun ModuleScreenContent(
                 .background(CreamWhite.copy(alpha = 0.88f))
         ) {
             Icon(Icons.Filled.AccountCircle, contentDescription = "Profile", tint = TextBrown)
-        }
-
-        if (module.number == 3) {
-            Button(
-                onClick = { onActivitySelected("blending_match") },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .windowInsetsPadding(WindowInsets.safeDrawing)
-                    .padding(horizontal = 28.dp, vertical = 18.dp)
-                    .fillMaxWidth()
-                    .shadow(10.dp, RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = RiceGreenDark,
-                    contentColor = CreamWhite
-                ),
-                enabled = selectorsEnabled
-            ) {
-                Text(
-                    "Blending Match",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
         }
     }
 }

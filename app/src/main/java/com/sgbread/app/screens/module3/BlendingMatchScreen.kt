@@ -1,5 +1,6 @@
 package com.sgbread.app.screens.module3
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,7 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,8 +55,12 @@ import kotlinx.coroutines.delay
 
 private val BLENDING_MATCH_EXCLUDED_WORDS = setOf("rice", "goat")
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
     val matchWords = remember {
         LettersBank.blendWords.filter { it.word.length == 3 && it.word !in BLENDING_MATCH_EXCLUDED_WORDS }
     }
@@ -77,7 +82,7 @@ fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         (distractors + round).shuffled()
     }
 
-    fun speakPrompt() = audio.playWord(round.word, rate = 0.9f)
+    fun speakPrompt() = audio?.playWord(round.word, rate = 0.9f)
 
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
@@ -86,7 +91,7 @@ fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         roundLocked = false
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Tap the matching word!") {
+            audio?.playRecordedPrompt("Tap the matching word!") {
                 speakPrompt()
             }
             return@LaunchedEffect
@@ -96,19 +101,19 @@ fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
 
     fun onPick(choice: BlendWord) {
         if (roundLocked) return
-        audio.stopPlayback()
+        audio?.stopPlayback()
         if (choice.word == round.word) {
             wrongWord = null
             correctWord = choice.word
             roundLocked = true
-            audio.playWord(choice.word, rate = 0.9f) {
+            audio?.playWord(choice.word, rate = 0.9f) {
                 pendingPraise = true
             }
         } else {
             correctWord = null
             wrongWord = choice.word
-            audio.playWord(choice.word, rate = 0.9f) {
-                audio.playSfx(Sfx.INCORRECT)
+            audio?.playWord(choice.word, rate = 0.9f) {
+                audio?.playSfx(Sfx.INCORRECT)
                 feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
             }
         }
@@ -117,7 +122,7 @@ fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
             delay(250)
-            audio.playSfx(Sfx.CORRECT)
+            audio?.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
         }
@@ -127,10 +132,10 @@ fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         val current = feedback
         if (current is AnswerFeedback.Correct) {
             delay(850)
-            while (audio.isPlaying.value) delay(100)
+            while (audio?.isPlaying?.value == true) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
-                audio.playSfx(Sfx.HARVEST)
+                audio?.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 roundIndex += 1
@@ -148,10 +153,16 @@ fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
         audio = audio,
-        blockInputDuringAudio = false
+        blockInputDuringAudio = false,
+        titleTextScale = responsiveTextScale
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -161,14 +172,26 @@ fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
             ) {
                 Text(
                     "Word ${roundIndex + 1} of ${rounds.size}",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    }
                 )
                 Text(
                     "Look at the picture, then tap the matching word",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = metrics.spacing)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = metrics.spacing)
                 )
 
                 Box(
@@ -186,7 +209,7 @@ fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                             word = round,
                             imageSize = metrics.largePictureSize,
                             onClick = {
-                                audio.stopPlayback()
+                                audio?.stopPlayback()
                                 speakPrompt()
                             }
                         )
@@ -296,7 +319,7 @@ private fun BlendingWordChoice(
 private fun BlendingMatchScreenPreview() {
     SgbReadTheme {
         BlendingMatchScreen(
-            audio = AudioManager.getInstance(LocalContext.current),
+            audio = null,
             onComplete = {},
             onBack = {}
         )
