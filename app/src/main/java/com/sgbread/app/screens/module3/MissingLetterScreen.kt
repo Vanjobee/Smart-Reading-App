@@ -100,6 +100,7 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
 
     fun onPick(letter: Char) {
         if (letter == missingLetter) {
+            wrongLetter = null
             filledLetter = letter
             audio.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
@@ -284,6 +285,7 @@ fun MissingLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
                                             size = maxChoiceSize,
                                             state = when {
                                                 isDragging -> ChoiceState.SELECTED
+                                                filledLetter == c -> ChoiceState.CORRECT
                                                 wrongLetter == c -> ChoiceState.WRONG
                                                 else -> ChoiceState.IDLE
                                             },

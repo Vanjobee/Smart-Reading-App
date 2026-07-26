@@ -50,6 +50,7 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongWord by remember { mutableStateOf<String?>(null) }
+    var correctWord by remember { mutableStateOf<String?>(null) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
@@ -65,6 +66,7 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
         wrongWord = null
+        correctWord = null
         if (!hasIntroduced) {
             hasIntroduced = true
             audio.playRecordedPrompt("Listen to the sounds blend them!") {
@@ -80,10 +82,13 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         // lets the child explore/hear all the choices, not just the one they land on.
         audio.stopPlayback()
         if (choice.word == round.word) {
+            wrongWord = null
+            correctWord = choice.word
             audio.playWord(choice.word, rate = 0.9f) {
                 pendingPraise = true
             }
         } else {
+            correctWord = null
             audio.playWord(choice.word, rate = 0.9f) {
                 audio.playSfx(Sfx.INCORRECT)
                 wrongWord = choice.word
@@ -181,7 +186,11 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                                     image = choice.image,
                                     label = null,
                                     imageSize = metrics.choiceImageSize,
-                                    state = if (wrongWord == choice.word) ChoiceState.WRONG else ChoiceState.IDLE,
+                                    state = when (choice.word) {
+                                        correctWord -> ChoiceState.CORRECT
+                                        wrongWord -> ChoiceState.WRONG
+                                        else -> ChoiceState.IDLE
+                                    },
                                     onClick = { onPick(choice) },
                                     modifier = Modifier.weight(1f)
                                 )

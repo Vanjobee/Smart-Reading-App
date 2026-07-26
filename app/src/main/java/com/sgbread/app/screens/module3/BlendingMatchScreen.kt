@@ -98,12 +98,14 @@ fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
         if (roundLocked) return
         audio.stopPlayback()
         if (choice.word == round.word) {
+            wrongWord = null
             correctWord = choice.word
             roundLocked = true
             audio.playWord(choice.word, rate = 0.9f) {
                 pendingPraise = true
             }
         } else {
+            correctWord = null
             wrongWord = choice.word
             audio.playWord(choice.word, rate = 0.9f) {
                 audio.playSfx(Sfx.INCORRECT)
