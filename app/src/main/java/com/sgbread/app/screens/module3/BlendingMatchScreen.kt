@@ -57,7 +57,7 @@ private val BLENDING_MATCH_EXCLUDED_WORDS = setOf("rice", "goat")
 @Composable
 fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     val matchWords = remember {
-        LettersBank.blendWords.filter { it.word !in BLENDING_MATCH_EXCLUDED_WORDS }
+        LettersBank.blendWords.filter { it.word.length == 3 && it.word !in BLENDING_MATCH_EXCLUDED_WORDS }
     }
     val rounds = remember { matchWords.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }

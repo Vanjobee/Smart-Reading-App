@@ -45,7 +45,7 @@ private val BLEND_READ_EXCLUDED_WORDS = setOf("goat", "rice")
 @Composable
 fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val blendItems = remember { LettersBank.blendWords.filter { it.word !in BLEND_READ_EXCLUDED_WORDS } }
+    val blendItems = remember { LettersBank.blendWords.filter { it.word.length == 3 && it.word !in BLEND_READ_EXCLUDED_WORDS } }
     val rounds = remember { blendItems.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
