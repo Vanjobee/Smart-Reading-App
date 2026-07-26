@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -207,7 +209,8 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                 )
                 Box(
                     modifier = Modifier
-                        .size(if (metrics.compactHeight) 210.dp else 320.dp)
+                        .fillMaxWidth(if (metrics.compactWidth) 0.94f else 0.82f)
+                        .height(if (metrics.compactHeight) 240.dp else 340.dp)
                         .padding(bottom = 0.dp)
                 ) {
                 Canvas(
