@@ -49,11 +49,19 @@ import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.SoilBrown
 import kotlinx.coroutines.delay
 
+private val PICTURE_WORD_MATCH_EXCLUDED_WORDS = setOf("goat", "rice")
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val rounds = remember { LettersBank.patternWords.distinctBy { it.word }.shuffled().take(10) }
+    val rounds = remember {
+        LettersBank.patternWords
+            .filter { it.word !in PICTURE_WORD_MATCH_EXCLUDED_WORDS }
+            .distinctBy { it.word }
+            .shuffled()
+            .take(10)
+    }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongWord by remember { mutableStateOf<String?>(null) }

@@ -52,9 +52,14 @@ import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.SoilBrown
 import kotlinx.coroutines.delay
 
+private val BLENDING_MATCH_EXCLUDED_WORDS = setOf("rice", "goat")
+
 @Composable
 fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
-    val rounds = remember { LettersBank.blendWords.shuffled().take(10) }
+    val matchWords = remember {
+        LettersBank.blendWords.filter { it.word !in BLENDING_MATCH_EXCLUDED_WORDS }
+    }
+    val rounds = remember { matchWords.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongWord by remember { mutableStateOf<String?>(null) }
@@ -65,7 +70,7 @@ fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () 
 
     val round = rounds[roundIndex]
     val choices = remember(roundIndex) {
-        val distractors = LettersBank.blendWords
+        val distractors = matchWords
             .filter { it.word != round.word }
             .shuffled()
             .take(2)

@@ -52,6 +52,7 @@ private const val UPPER_PREFIX = "U:"
 private const val LOWER_PREFIX = "L:"
 private const val PAIRS_PER_ROUND = 5
 private const val ROUND_COUNT = 5
+private val MATCH_CASE_EXCLUDED_WORDS = setOf("goat", "rice")
 
 /**
  * Match Upper & Lowercase: the child drags a line from a capital letter to
@@ -62,7 +63,13 @@ private const val ROUND_COUNT = 5
 @Composable
 fun MatchCaseScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     // Freshly shuffled each time the screen is entered, so replays don't always start on A-C.
-    val rounds = remember { LettersBank.phonicsItems.shuffled().take(PAIRS_PER_ROUND * ROUND_COUNT).chunked(PAIRS_PER_ROUND) }
+    val rounds = remember {
+        LettersBank.phonicsItems
+            .filter { it.word !in MATCH_CASE_EXCLUDED_WORDS }
+            .shuffled()
+            .chunked(PAIRS_PER_ROUND)
+            .take(ROUND_COUNT)
+    }
     var roundIndex by remember { mutableStateOf(0) }
     val matchTargets = rounds[roundIndex]
     val uppers = remember(roundIndex) { matchTargets.map { it.letter.uppercaseChar() }.shuffled() }

@@ -43,15 +43,19 @@ import kotlinx.coroutines.delay
 // Module 2 uses larger touch targets/text than the shared activity defaults.
 private const val M2_SCALE = 1.25f
 private const val CHOICE_COUNT = 6
+private val TAP_LETTER_EXCLUDED_WORDS = setOf("goat", "rice")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val rounds = remember { LettersBank.phonicsItems.shuffled().take(10) }
+    val tapItems = remember { LettersBank.phonicsItems.filter { it.word !in TAP_LETTER_EXCLUDED_WORDS } }
+    val rounds = remember { tapItems.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongLetter by remember { mutableStateOf<Char?>(null) }
+    var correctLetter by remember { mutableStateOf<Char?>(null) }
+    var roundLocked by remember { mutableStateOf(false) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
@@ -60,6 +64,7 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
         (listOf(round.letter) + LettersBank.phonicsItems
             .map { it.letter }
             .filter { it != round.letter }
+            .filter { letter -> tapItems.any { it.letter == letter } }
             .distinct()
             .shuffled()
             .take(CHOICE_COUNT - 1))
@@ -72,6 +77,8 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
         wrongLetter = null
+        correctLetter = null
+        roundLocked = false
         if (!hasIntroduced) {
             hasIntroduced = true
             audio.playRecordedPrompt("What letter does this picture begin with?") {
@@ -83,8 +90,11 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
     }
 
     fun onPick(letter: Char) {
+        if (roundLocked) return
         audio.stopPlayback()
         if (letter == round.letter) {
+            correctLetter = letter
+            roundLocked = true
             audio.speakLetterThenWord(round.letter, round.word, rate = 0.9f) {
                 pendingPraise = true
             }
@@ -174,7 +184,12 @@ fun TapLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
                                 LetterChip(
                                     letter = c,
                                     size = if (metrics.compactWidth || metrics.compactHeight) metrics.chipSize else metrics.choiceChipSize,
-                                    state = if (wrongLetter == c) ChoiceState.WRONG else ChoiceState.IDLE,
+                                    state = when (c) {
+                                        correctLetter -> ChoiceState.CORRECT
+                                        wrongLetter -> ChoiceState.WRONG
+                                        else -> ChoiceState.IDLE
+                                    },
+                                    enabled = !roundLocked,
                                     onClick = { onPick(c) }
                                 )
                             }

@@ -73,9 +73,14 @@ private data class BasketChoice(val id: Int, val letter: Char, val isTarget: Boo
 private const val WORD_POPUP_HOLD_AFTER_AUDIO_MS = 450L
 private const val BASKET_CHOICE_COUNT = 18
 private const val BASKET_TARGET_COUNT = 6
+private val LETTER_BASKET_EXCLUDED_WORDS = setOf("goat", "rice")
+private val LETTER_BASKET_EXCLUDED_LETTERS = setOf('G', 'R')
 
 private fun buildBasketChoices(target: Char): List<BasketChoice> {
-    val distractors = LettersBank.phonicsItems.map { it.letter }.filter { it != target }
+    val distractors = LettersBank.phonicsItems
+        .filter { it.word !in LETTER_BASKET_EXCLUDED_WORDS }
+        .map { it.letter }
+        .filter { it != target && it.uppercaseChar() !in LETTER_BASKET_EXCLUDED_LETTERS }
     val targetChoices = List(BASKET_TARGET_COUNT) { index ->
         BasketChoice(
             id = index,
@@ -144,9 +149,13 @@ private fun scatterPositions(
 fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     // Freshly shuffled each time the screen is entered, so replays don't always start on A-C.
     val basketRounds = remember {
-        LettersBank.phonicsItems.shuffled().take(10).map { target ->
-            BasketRound(target, buildBasketChoices(target.letter))
-        }
+        LettersBank.phonicsItems
+            .filter { it.word !in LETTER_BASKET_EXCLUDED_WORDS }
+            .shuffled()
+            .take(10)
+            .map { target ->
+                BasketRound(target, buildBasketChoices(target.letter))
+            }
     }
     var roundIndex by remember { mutableStateOf(0) }
     val round = basketRounds[roundIndex]

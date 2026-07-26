@@ -39,11 +39,14 @@ import com.sgbread.app.ui.components.activityLayoutMetrics
 import com.sgbread.app.ui.theme.SgbReadTheme
 import kotlinx.coroutines.delay
 
+private val BLEND_READ_EXCLUDED_WORDS = setOf("goat", "rice")
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val rounds = remember { LettersBank.blendWords.shuffled().take(10) }
+    val blendItems = remember { LettersBank.blendWords.filter { it.word !in BLEND_READ_EXCLUDED_WORDS } }
+    val rounds = remember { blendItems.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongWord by remember { mutableStateOf<String?>(null) }
@@ -52,7 +55,7 @@ fun BlendReadScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> U
 
     val round = rounds[roundIndex]
     val choices = remember(roundIndex) {
-        (listOf(round) + LettersBank.blendWords.filter { it.word != round.word }.shuffled().take(1)).shuffled()
+        (listOf(round) + blendItems.filter { it.word != round.word }.shuffled().take(1)).shuffled()
     }
 
     fun speakPrompt() {

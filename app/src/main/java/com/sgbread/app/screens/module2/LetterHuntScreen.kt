@@ -50,6 +50,7 @@ private data class HuntCell(val letter: Char, val isTarget: Boolean, var found: 
 private const val ON_SCREEN_COUNT = 20
 private const val TARGET_COUNT = 8
 private const val M2_SCALE = 0.86f
+private val PHONICS_HUNT_EXCLUDED_WORDS = setOf("goat", "rice")
 
 private fun buildLetters(target: Char): List<HuntCell> {
     val distractors = ALPHABET.filter { it != target }
@@ -111,7 +112,9 @@ private fun scatterPositions(
 @Composable
 fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val huntRounds = remember { LettersBank.phonicsItems.shuffled().take(10) }
+    val huntRounds = remember {
+        LettersBank.phonicsItems.filter { it.word !in PHONICS_HUNT_EXCLUDED_WORDS }.shuffled().take(10)
+    }
     var roundIndex by remember { mutableStateOf(0) }
     var letters by remember(roundIndex) { mutableStateOf(buildLetters(huntRounds[roundIndex].letter)) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }

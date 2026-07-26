@@ -48,12 +48,14 @@ import kotlinx.coroutines.delay
 
 // Module 2 uses larger touch targets/text than the shared activity defaults.
 private const val M2_SCALE = 1.25f
+private val LISTEN_MATCH_EXCLUDED_WORDS = setOf("goat", "rice")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val rounds = remember { LettersBank.phonicsItems.shuffled().take(10) }
+    val matchItems = remember { LettersBank.phonicsItems.filter { it.word !in LISTEN_MATCH_EXCLUDED_WORDS } }
+    val rounds = remember { matchItems.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongPick by remember { mutableStateOf<Int?>(null) }
@@ -64,7 +66,7 @@ fun ListenMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
 
     val round = rounds[roundIndex]
     val choices = remember(roundIndex) {
-        (listOf(round) + LettersBank.phonicsItems.filter { it != round }.shuffled().take(1)).shuffled()
+        (listOf(round) + matchItems.filter { it != round }.shuffled().take(1)).shuffled()
     }
 
     fun speakPrompt() = audio.speakThenLetterSound("Listen.", round.letter, rate = 0.85f)
