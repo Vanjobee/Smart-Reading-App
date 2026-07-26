@@ -198,7 +198,7 @@ fun ActivityScaffold(
 
     if (showBackConfirmation) {
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = { showBackConfirmation = false },
             title = { Text("Leave activity?") },
             text = {
                 Text("Are you sure you want to leave? Your progress in this activity will be reset.")
@@ -218,6 +218,7 @@ fun ActivityScaffold(
                 OutlinedButton(
                     onClick = {
                         playTap()
+                        showBackConfirmation = false
                     }
                 ) {
                     Text("Cancel")

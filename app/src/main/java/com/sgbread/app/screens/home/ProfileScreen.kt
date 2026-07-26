@@ -213,7 +213,7 @@ fun ProfileScreen(
 
     if (showResetConfirm) {
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = { showResetConfirm = false },
             title = { Text("Reset all progress?") },
             text = { Text("Every completed activity will be cleared and the farm will start growing again from a seed. This can't be undone.") },
             confirmButton = {
@@ -221,6 +221,7 @@ fun ProfileScreen(
                     onClick = {
                         playTapAndRun {
                             progressViewModel.resetProgress()
+                            showResetConfirm = false
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = IncorrectRed)
@@ -230,7 +231,11 @@ fun ProfileScreen(
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { playTapAndRun { } }
+                    onClick = {
+                        playTapAndRun {
+                            showResetConfirm = false
+                        }
+                    }
                 ) {
                     Text("Cancel")
                 }
