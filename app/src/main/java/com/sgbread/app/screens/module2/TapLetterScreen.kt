@@ -152,7 +152,8 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
-        titleTextScale = responsiveTextScale
+        titleTextScale = responsiveTextScale,
+        confirmOnBack = roundIndex > 0 || correctLetter != null
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)

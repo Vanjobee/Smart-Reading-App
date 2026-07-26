@@ -154,7 +154,8 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
-        titleTextScale = responsiveTextScale
+        titleTextScale = responsiveTextScale,
+        confirmOnBack = roundIndex > 0 || correctWord != null
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)

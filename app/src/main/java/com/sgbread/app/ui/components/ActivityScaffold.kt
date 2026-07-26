@@ -1,6 +1,8 @@
 package com.sgbread.app.ui.components
 
+import android.annotation.SuppressLint
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -13,17 +15,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
 import com.sgbread.app.ui.theme.CreamWhite
+import com.sgbread.app.ui.theme.IncorrectRed
 import com.sgbread.app.ui.theme.TextBrown
 
 /**
@@ -45,6 +55,7 @@ import com.sgbread.app.ui.theme.TextBrown
  * spot for the reinforcement banner.
  */
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun ActivityScaffold(
     title: String,
@@ -55,11 +66,31 @@ fun ActivityScaffold(
     playFeedbackAudio: Boolean = true,
     blockInputDuringAudio: Boolean = true,
     titleTextScale: Float = 1f,
+    confirmOnBack: Boolean = false,
     content: @Composable (PaddingValues) -> Unit
 ) {
     val isAudioPlaying by audio?.isPlaying?.collectAsStateWithLifecycle()
-        ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        ?: androidx.compose.runtime.remember { mutableStateOf(false) }
     val view = LocalView.current
+    var showBackConfirmation by remember { mutableStateOf(false) }
+
+    fun playTap() {
+        audio?.stopPlayback()
+        audio?.playSfx(Sfx.TAP)
+    }
+
+    fun requestBack() {
+        if (confirmOnBack) {
+            playTap()
+            showBackConfirmation = true
+        } else {
+            onBack()
+        }
+    }
+
+    BackHandler(enabled = confirmOnBack && !showBackConfirmation) {
+        requestBack()
+    }
 
     DisposableEffect(view) {
         val statusBarController = if (!view.isInEditMode) {
@@ -104,14 +135,7 @@ fun ActivityScaffold(
                     },
                     navigationIcon = {
                         IconButton(
-                            onClick = {
-                                if (audio == null) {
-                                    onBack()
-                                } else {
-                                    audio.stopPlayback()
-                                    audio.playSfx(Sfx.TAP, onComplete = onBack)
-                                }
-                            }
+                            onClick = { requestBack() }
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextBrown)
                         }
@@ -170,5 +194,35 @@ fun ActivityScaffold(
                 }
             }
         }
+    }
+
+    if (showBackConfirmation) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Leave activity?") },
+            text = {
+                Text("Are you sure you want to leave? Your progress in this activity will be reset.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        playTap()
+                        onBack()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = IncorrectRed)
+                ) {
+                    Text("Leave", color = CreamWhite)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = {
+                        playTap()
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

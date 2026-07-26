@@ -138,13 +138,14 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
     }
 
     ActivityScaffold(
-        title = "Picture-to-Word Match",
+        title = "Digraph Match",
         onBack = onBack,
         onReplayInstructions = { speakWord() },
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
-        titleTextScale = responsiveTextScale
+        titleTextScale = responsiveTextScale,
+        confirmOnBack = roundIndex > 0 || pendingPraise || feedback is AnswerFeedback.Correct
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)

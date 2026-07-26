@@ -198,7 +198,8 @@ fun TraceLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
         onReplayInstructions = { speakCurrent() },
         audio = audio,
         blockInputDuringAudio = false,
-        titleTextScale = responsiveTextScale
+        titleTextScale = responsiveTextScale,
+        confirmOnBack = stepIndex > 0 || strokes.isNotEmpty() || currentStroke.isNotEmpty()
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)

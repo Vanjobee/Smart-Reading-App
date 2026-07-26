@@ -77,7 +77,8 @@ fun ProfileScreen(
         title = "Profile",
         onBack = { playTapAndRun(onBack) },
         onReplayInstructions = null,
-        titleTextScale = responsiveTextScale
+        titleTextScale = responsiveTextScale,
+        confirmOnBack = false
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
@@ -212,7 +213,7 @@ fun ProfileScreen(
 
     if (showResetConfirm) {
         AlertDialog(
-            onDismissRequest = { showResetConfirm = false },
+            onDismissRequest = { },
             title = { Text("Reset all progress?") },
             text = { Text("Every completed activity will be cleared and the farm will start growing again from a seed. This can't be undone.") },
             confirmButton = {
@@ -220,7 +221,6 @@ fun ProfileScreen(
                     onClick = {
                         playTapAndRun {
                             progressViewModel.resetProgress()
-                            showResetConfirm = false
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = IncorrectRed)
@@ -230,7 +230,7 @@ fun ProfileScreen(
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { playTapAndRun { showResetConfirm = false } }
+                    onClick = { playTapAndRun { } }
                 ) {
                     Text("Cancel")
                 }
