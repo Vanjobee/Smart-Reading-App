@@ -248,7 +248,7 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
     }
 
     ActivityScaffold(
-        title = "Letter Basket",
+        title = "Letter Hunt",
         onBack = onBack,
         onReplayInstructions = { instructions() },
         feedback = feedback,

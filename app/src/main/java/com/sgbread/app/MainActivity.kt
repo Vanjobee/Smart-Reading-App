@@ -24,13 +24,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            SgbReadApp()
+            SgbReadApp(onExit = { finishAndRemoveTask() })
         }
     }
 }
 
 @Composable
-private fun SgbReadApp() {
+private fun SgbReadApp(onExit: () -> Unit) {
     SgbReadTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
             val navController = rememberNavController()
@@ -56,7 +56,8 @@ private fun SgbReadApp() {
             SgbNavGraph(
                 navController = navController,
                 progressViewModel = progressViewModel,
-                audio = audioManager
+                audio = audioManager,
+                onExit = onExit
             )
         }
     }

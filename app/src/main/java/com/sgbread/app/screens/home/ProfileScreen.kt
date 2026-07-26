@@ -1,8 +1,10 @@
 package com.sgbread.app.screens.home
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -28,10 +30,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sgbread.app.audio.AudioManager
+import com.sgbread.app.audio.Sfx
 import com.sgbread.app.data.ModuleInfo
 import com.sgbread.app.data.Modules
 import com.sgbread.app.progress.ProgressViewModel
@@ -47,34 +53,64 @@ import com.sgbread.app.ui.theme.SunYellow
 
 private const val MIN_BAR_FRACTION = 0.05f
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun ProfileScreen(
     progressViewModel: ProgressViewModel,
+    audio: AudioManager,
     onBack: () -> Unit
 ) {
     val progress by progressViewModel.state.collectAsStateWithLifecycle()
     var showResetConfirm by remember { mutableStateOf(false) }
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
+    fun playTapAndRun(action: () -> Unit) {
+        audio.stopPlayback()
+        audio.playSfx(Sfx.TAP)
+        action()
+    }
 
     // The app is landscape-locked, so the sidebar (summary + reset) sits beside the
     // chart rather than above it -- stacking them would starve the bars of height.
-    ActivityScaffold(title = "Profile", onBack = onBack, onReplayInstructions = null) { padding ->
-        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+    ActivityScaffold(
+        title = "Profile",
+        onBack = { playTapAndRun(onBack) },
+        onReplayInstructions = null,
+        titleTextScale = responsiveTextScale
+    ) { padding ->
+        BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
             val compactProfile = maxWidth < 620.dp
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
 
             if (compactProfile) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(padding)
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = metrics.horizontalPadding, vertical = metrics.verticalPadding),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(metrics.spacing)
                 ) {
-                    PlantProgressBar(fraction = progress.fraction, modifier = Modifier.fillMaxWidth())
+                    PlantProgressBar(
+                        fraction = progress.fraction,
+                        modifier = Modifier.fillMaxWidth(),
+                        labelColor = CreamWhite,
+                        labelTextScale = responsiveTextScale
+                    )
                     Text(
                         "${progress.completedActivityIds.size} of ${progress.totalActivities} activities complete",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium.let { baseStyle ->
+                            baseStyle.copy(fontSize = baseStyle.fontSize * responsiveTextScale)
+                        },
+                        color = CreamWhite,
                         textAlign = TextAlign.Center
                     )
                     Row(
@@ -91,17 +127,25 @@ fun ProfileScreen(
                         }
                     }
                     OutlinedButton(
-                        onClick = { showResetConfirm = true },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = IncorrectRed),
+                        onClick = { playTapAndRun { showResetConfirm = true } },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = CreamWhite),
+                        border = BorderStroke(1.5.dp, CreamWhite.copy(alpha = 0.85f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Reset All Progress", fontWeight = FontWeight.Bold)
+                        Text(
+                            "Reset All Progress",
+                            style = MaterialTheme.typography.labelLarge.let { baseStyle ->
+                                baseStyle.copy(fontSize = baseStyle.fontSize * responsiveTextScale)
+                            },
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             } else {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(padding)
                         .padding(20.dp)
                 ) {
                     Column(
@@ -112,20 +156,35 @@ fun ProfileScreen(
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            PlantProgressBar(fraction = progress.fraction, modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth())
+                            PlantProgressBar(
+                                fraction = progress.fraction,
+                                modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth(),
+                                labelColor = CreamWhite,
+                                labelTextScale = responsiveTextScale
+                            )
                             Text(
                                 "${progress.completedActivityIds.size} of ${progress.totalActivities} activities complete",
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodyMedium.let { baseStyle ->
+                                    baseStyle.copy(fontSize = baseStyle.fontSize * responsiveTextScale)
+                                },
+                                color = CreamWhite,
                                 textAlign = TextAlign.Center
                             )
                         }
 
                         OutlinedButton(
-                            onClick = { showResetConfirm = true },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = IncorrectRed),
+                            onClick = { playTapAndRun { showResetConfirm = true } },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = CreamWhite),
+                            border = BorderStroke(1.5.dp, CreamWhite.copy(alpha = 0.85f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Reset All Progress", fontWeight = FontWeight.Bold)
+                            Text(
+                                "Reset All Progress",
+                                style = MaterialTheme.typography.labelLarge.let { baseStyle ->
+                                    baseStyle.copy(fontSize = baseStyle.fontSize * responsiveTextScale)
+                                },
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
 
@@ -158,8 +217,10 @@ fun ProfileScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        progressViewModel.resetProgress()
-                        showResetConfirm = false
+                        playTapAndRun {
+                            progressViewModel.resetProgress()
+                            showResetConfirm = false
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = IncorrectRed)
                 ) {
@@ -167,7 +228,9 @@ fun ProfileScreen(
                 }
             },
             dismissButton = {
-                OutlinedButton(onClick = { showResetConfirm = false }) {
+                OutlinedButton(
+                    onClick = { playTapAndRun { showResetConfirm = false } }
+                ) {
                     Text("Cancel")
                 }
             }
@@ -188,7 +251,8 @@ private fun ModuleBar(module: ModuleInfo, done: Int, fraction: Float, modifier: 
         Text(
             "$done/${module.activities.size}",
             style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = CreamWhite
         )
         Box(
             modifier = Modifier
@@ -199,7 +263,7 @@ private fun ModuleBar(module: ModuleInfo, done: Int, fraction: Float, modifier: 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(SunYellow.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
+                    .background(SunYellow.copy(alpha = 0.45f), RoundedCornerShape(10.dp))
             )
             Box(
                 modifier = Modifier
@@ -216,6 +280,7 @@ private fun ModuleBar(module: ModuleInfo, done: Int, fraction: Float, modifier: 
         Text(
             module.title,
             style = MaterialTheme.typography.labelLarge,
+            color = CreamWhite,
             textAlign = TextAlign.Center,
             maxLines = 2,
             modifier = Modifier.padding(top = 2.dp)

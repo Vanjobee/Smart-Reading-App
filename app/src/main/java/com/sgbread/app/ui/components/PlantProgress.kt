@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sgbread.app.data.FarmIconKey
@@ -43,12 +44,24 @@ enum class GrowthStage(val label: String, val icon: FarmIconKey) {
 }
 
 @Composable
-fun PlantProgressBar(fraction: Float, modifier: Modifier = Modifier) {
+fun PlantProgressBar(
+    fraction: Float,
+    modifier: Modifier = Modifier,
+    labelColor: Color = Color.Unspecified,
+    labelTextScale: Float = 1f
+) {
     val stage = GrowthStage.fromProgress(fraction)
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FarmIcon(stage.icon, modifier = Modifier.size(40.dp), background = null)
-            Text(stage.label, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                stage.label,
+                style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                    baseStyle.copy(fontSize = baseStyle.fontSize * labelTextScale.coerceIn(1f, 1.25f))
+                },
+                fontWeight = FontWeight.Bold,
+                color = labelColor
+            )
         }
         LinearProgressIndicator(
             progress = { fraction.coerceIn(0f, 1f) },

@@ -1,5 +1,6 @@
 package com.sgbread.app.screens.module1
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.scaleIn
@@ -12,8 +13,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,7 +41,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -81,7 +80,7 @@ private fun buildGlyphMask(glyph: String, width: Float, height: Float): GlyphMas
     val minDim = minOf(width, height)
     val paint = android.graphics.Paint().apply {
         isAntiAlias = true
-        textSize = minDim * 0.62f
+        textSize = minDim * if (glyph in setOf("Mm", "Ww")) 0.52f else 0.62f
         textAlign = android.graphics.Paint.Align.LEFT
         isFakeBoldText = true
     }
@@ -114,8 +113,12 @@ private fun buildGlyphMask(glyph: String, width: Float, height: Float): GlyphMas
     )
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+fun TraceLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
     // Freshly shuffled each time the screen is entered, so replays don't always start on A-F.
     val traceLetters = remember { LettersBank.phonicsItems.shuffled().take(10) }
     var stepIndex by remember { mutableStateOf(0) }
@@ -125,22 +128,24 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
     var currentStroke by remember { mutableStateOf(listOf<Offset>()) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var letterPopupVisible by remember { mutableStateOf(false) }
+    var popupItem by remember { mutableStateOf(traceLetters.first()) }
     var completionAudioFinished by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
     val totalSteps = traceLetters.size
     val item = traceLetters[stepIndex]
     val glyph = "${item.letter.uppercaseChar()}${item.letter.lowercaseChar()}"
+    val popupGlyph = "${popupItem.letter.uppercaseChar()}${popupItem.letter.lowercaseChar()}"
 
     // Manual replay gives the recorded letter name without revealing the reward word.
     fun speakCurrent() {
-        audio.playLetterName(item.letter)
+        audio?.playLetterName(item.letter)
     }
 
     // Completion repeats the recorded letter name, then reveals its vocabulary word.
     fun speakCompletion() {
         completionAudioFinished = false
-        audio.speakLetterNameThenWord(item.letter, item.word, rate = 0.85f) {
+        audio?.speakLetterNameThenWord(item.letter, item.word, rate = 0.85f) {
             completionAudioFinished = true
         }
     }
@@ -163,14 +168,14 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         completionAudioFinished = false
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Trace Letter!") {
+            audio?.playRecordedPrompt("Trace Letter!") {
                 audio.playLetterName(item.letter)
             }
             return@LaunchedEffect
         }
         // Only the letter's name is given up front — the word is revealed after
         // the child finishes tracing, so it doesn't give the answer away early.
-        audio.playLetterName(item.letter)
+        audio?.playLetterName(item.letter)
     }
 
     LaunchedEffect(completionAudioFinished) {
@@ -179,7 +184,7 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
             letterPopupVisible = false
             completionAudioFinished = false
             if (stepIndex == totalSteps - 1) {
-                audio.playSfx(Sfx.HARVEST)
+                audio?.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 stepIndex += 1
@@ -188,14 +193,20 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
     }
 
     ActivityScaffold(
-        title = "Trace the Letter",
+        title = "Letter Trace",
         onBack = onBack,
         onReplayInstructions = { speakCurrent() },
         audio = audio,
-        blockInputDuringAudio = false
+        blockInputDuringAudio = false,
+        titleTextScale = responsiveTextScale
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
             ResponsiveColumn(
                 metrics = metrics,
                 modifier = Modifier.padding(padding),
@@ -204,7 +215,18 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
             ) {
                 Text(
                     "Letter ${stepIndex + 1} of ${traceLetters.size} — trace $glyph",
-                    style = if (metrics.compactHeight) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodyMedium,
+                    style = (
+                        if (metrics.compactHeight) {
+                            MaterialTheme.typography.labelMedium
+                        } else {
+                            MaterialTheme.typography.bodyMedium
+                        }
+                    ).let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     modifier = Modifier.padding(bottom = 0.dp)
                 )
                 Box(
@@ -221,8 +243,9 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                             detectDragGestures(
                                 onDragStart = { offset ->
                                     if (letterPopupVisible) return@detectDragGestures
-                                    audio.stopPlayback()
-                                    if (strokes.isEmpty() && currentStroke.isEmpty()) audio.playLetterName(item.letter)
+                                    audio?.stopPlayback()
+                                    audio?.startWritingSound()
+                                    if (strokes.isEmpty() && currentStroke.isEmpty()) audio?.playLetterName(item.letter)
                                     currentStroke = listOf(offset)
                                 },
                                 onDrag = { change, _ ->
@@ -240,7 +263,8 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                                         if (newlyRevealed) {
                                             val coverage = revealed.count { it } / mask.samplePoints.size.toFloat()
                                             if (coverage >= COMPLETION_THRESHOLD) {
-                                                audio.playSfx(Sfx.CORRECT)
+                                                popupItem = item
+                                                audio?.playSfx(Sfx.CORRECT)
                                                 speakCompletion()
                                                 letterPopupVisible = true
                                             }
@@ -248,12 +272,14 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                                     }
                                 },
                                 onDragEnd = {
+                                    audio?.stopWritingSound()
                                     if (currentStroke.isNotEmpty()) {
                                         strokes = strokes + listOf(currentStroke)
                                         currentStroke = emptyList()
                                     }
                                 },
                                 onDragCancel = {
+                                    audio?.stopWritingSound()
                                     if (currentStroke.isNotEmpty()) {
                                         strokes = strokes + listOf(currentStroke)
                                         currentStroke = emptyList()
@@ -287,7 +313,10 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                     }
                 }
 
-                androidx.compose.animation.AnimatedVisibility(
+                }
+            }
+
+            androidx.compose.animation.AnimatedVisibility(
                     visible = letterPopupVisible,
                     enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy)),
                     exit = scaleOut(),
@@ -300,17 +329,23 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                         Column(
                             modifier = Modifier
                                 .background(CreamWhite, RoundedCornerShape(28.dp))
-                                .padding(if (metrics.compactHeight) 16.dp else 24.dp),
+                                .padding(if (metrics.compactHeight) 22.dp else 28.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Image(
-                                painter = painterResource(item.image),
-                                contentDescription = item.word,
-                                modifier = Modifier.size(metrics.pictureSize),
+                                painter = painterResource(popupItem.image),
+                                contentDescription = popupItem.word,
+                                modifier = Modifier.size(
+                                    if (metrics.compactHeight) {
+                                        metrics.largePictureSize
+                                    } else {
+                                        metrics.largePictureSize * 1.15f
+                                    }
+                                ),
                                 contentScale = ContentScale.Fit
                             )
                             Text(
-                                "\"$glyph\" is for \"${item.word}\"",
+                                "\"$popupGlyph\" is for \"${popupItem.word}\"",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = SoilBrown,
@@ -319,8 +354,6 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                         }
                     }
                 }
-            }
-            }
         }
 
         if (finished) {
@@ -333,6 +366,6 @@ fun TraceLetterScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
 @Composable
 private fun TraceLetterScreenPreview() {
     SgbReadTheme {
-        TraceLetterScreen(audio = AudioManager.getInstance(LocalContext.current), onComplete = {}, onBack = {})
+        TraceLetterScreen(audio = null, onComplete = {}, onBack = {})
     }
 }

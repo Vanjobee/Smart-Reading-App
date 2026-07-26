@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sgbread.app.audio.AudioManager
+import com.sgbread.app.audio.Sfx
 import com.sgbread.app.ui.theme.CreamWhite
 import com.sgbread.app.ui.theme.TextBrown
 
@@ -50,6 +51,7 @@ fun ActivityScaffold(
     audio: AudioManager? = null,
     playFeedbackAudio: Boolean = true,
     blockInputDuringAudio: Boolean = true,
+    titleTextScale: Float = 1f,
     content: @Composable (PaddingValues) -> Unit
 ) {
     val isAudioPlaying by audio?.isPlaying?.collectAsStateWithLifecycle()
@@ -68,9 +70,27 @@ fun ActivityScaffold(
             containerColor = Color.Transparent,
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { AutoSizeText(title, style = MaterialTheme.typography.titleLarge.copy(color = TextBrown)) },
+                    title = {
+                        val titleStyle = MaterialTheme.typography.titleLarge
+                        AutoSizeText(
+                            title,
+                            style = titleStyle.copy(
+                                color = TextBrown,
+                                fontSize = titleStyle.fontSize * titleTextScale.coerceIn(1f, 1.25f)
+                            )
+                        )
+                    },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
+                        IconButton(
+                            onClick = {
+                                if (audio == null) {
+                                    onBack()
+                                } else {
+                                    audio.stopPlayback()
+                                    audio.playSfx(Sfx.TAP, onComplete = onBack)
+                                }
+                            }
+                        ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextBrown)
                         }
                     },
