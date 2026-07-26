@@ -149,6 +149,11 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            val responsiveImageScale = if (metrics.compactHeight) {
+                1f
+            } else {
+                responsiveTextScale.coerceAtMost(1.15f)
+            }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -193,7 +198,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
                                 painter = painterResource(round.image),
                                 contentDescription = round.word,
                                 modifier = Modifier
-                                    .size(metrics.largePictureSize)
+                                    .size(metrics.largePictureSize * responsiveImageScale)
                                     .clickable {
                                         audio?.stopPlayback()
                                         speakWord()
@@ -204,7 +209,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
                             FarmIcon(
                                 round.icon,
                                 modifier = Modifier
-                                    .size(metrics.largePictureSize)
+                                    .size(metrics.largePictureSize * responsiveImageScale)
                                     .clickable {
                                         audio?.stopPlayback()
                                         speakWord()

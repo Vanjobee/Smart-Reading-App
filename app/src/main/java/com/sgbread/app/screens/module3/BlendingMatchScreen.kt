@@ -159,6 +159,11 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            val responsiveImageScale = if (metrics.compactHeight) {
+                1f
+            } else {
+                responsiveTextScale.coerceAtMost(1.15f)
+            }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -208,7 +213,7 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                     ) {
                         BlendingPictureCard(
                             word = round,
-                            imageSize = metrics.largePictureSize,
+                            imageSize = metrics.largePictureSize * responsiveImageScale,
                             onClick = {
                                 audio?.stopPlayback()
                                 speakPrompt()

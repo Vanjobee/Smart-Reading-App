@@ -264,6 +264,11 @@ fun LetterBasketScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            val responsiveImageScale = if (metrics.compactHeight) {
+                1f
+            } else {
+                responsiveTextScale.coerceAtMost(1.15f)
+            }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -364,7 +369,9 @@ fun LetterBasketScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
                     // Enlarged for visibility and touch target size -- this single element is
                     // now both the "hear the sound" button and the drag-drop target, so it
                     // needs to read clearly on its own without a separate sample-letter tile.
-                    val basketSize = if (metrics.compactWidth || metrics.compactHeight) 132.dp else 190.dp
+                    val basketSize = (
+                        if (metrics.compactWidth || metrics.compactHeight) 132.dp else 190.dp
+                    ) * responsiveImageScale
                     val basketFontSize = if (metrics.compactWidth || metrics.compactHeight) 48.sp else 72.sp
 
                     @Composable

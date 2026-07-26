@@ -157,6 +157,11 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            val responsiveImageScale = if (metrics.compactHeight) {
+                1f
+            } else {
+                responsiveTextScale.coerceAtMost(1.15f)
+            }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -200,7 +205,7 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                             painter = painterResource(round.image),
                             contentDescription = round.word,
                             modifier = Modifier
-                                .size(metrics.largePictureSize * M2_SCALE)
+                                .size(metrics.largePictureSize * M2_SCALE * responsiveImageScale)
                                 .clickable {
                                     audio?.stopPlayback()
                                     audio?.playWord(round.word, rate = 0.9f)
