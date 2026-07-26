@@ -1,5 +1,6 @@
 package com.sgbread.app.screens.module2
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,7 +21,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -109,8 +111,12 @@ private fun scatterPositions(
     }
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
     // Freshly shuffled each time the screen is entered, not just once per app launch.
     val huntRounds = remember {
         LettersBank.phonicsItems.filter { it.word !in PHONICS_HUNT_EXCLUDED_WORDS }.shuffled().take(10)
@@ -127,13 +133,13 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
     val foundCount = letters.count { it.isTarget && it.found }
 
     // Phonics sound then the word, in sequence, so the child hunts by sound rather than by name.
-    fun speakPrompt() = audio.speakLetterThenWord(target, round.word, rate = 0.9f)
+    fun speakPrompt() = audio?.speakLetterThenWord(target, round.word, rate = 0.9f)
 
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Lets search the letter in the farm!") {
+            audio?.playRecordedPrompt("Lets search the letter in the farm!") {
                 speakPrompt()
             }
             return@LaunchedEffect
@@ -144,26 +150,26 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
     fun onCellTap(index: Int) {
         val cell = letters[index]
         if (cell.found) return
-        audio.stopPlayback()
+        audio?.stopPlayback()
         if (cell.isTarget) {
-            audio.playSfx(Sfx.CORRECT)
+            audio?.playSfx(Sfx.CORRECT)
             letters = letters.toMutableList().also { it[index] = it[index].copy(found = true) }
             if (foundCount + 1 == TARGET_COUNT) {
-                audio.speakLetterThenWord(target, round.word) {
+                audio?.speakLetterThenWord(target, round.word) {
                     pendingPraise = true
                 }
             } else {
-                audio.playLetterSound(cell.letter)
+                audio?.playLetterSound(cell.letter)
             }
         } else {
-            audio.playLetterSound(cell.letter)
+            audio?.playLetterSound(cell.letter)
         }
     }
 
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
             delay(300)
-            audio.playSfx(Sfx.CORRECT)
+            audio?.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
         }
@@ -172,10 +178,10 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
     LaunchedEffect(feedback) {
         if (feedback is AnswerFeedback.Correct) {
             delay(850)
-            while (audio.isPlaying.value) delay(100)
+            while (audio?.isPlaying?.value == true) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == huntRounds.lastIndex) {
-                audio.playSfx(Sfx.HARVEST)
+                audio?.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 roundIndex += 1
@@ -189,10 +195,16 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
         audio = audio,
-        blockInputDuringAudio = false
+        blockInputDuringAudio = false,
+        titleTextScale = responsiveTextScale
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
             val chipSize = if (metrics.compactHeight || metrics.compactWidth) {
                 metrics.chipSize * 0.78f
             } else {
@@ -210,11 +222,33 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
             ) {
                 Text(
                     "Round ${roundIndex + 1} of ${huntRounds.size}",
-                    style = if (metrics.compactHeight) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleLarge
+                    style = (
+                        if (metrics.compactHeight) {
+                            MaterialTheme.typography.labelLarge
+                        } else {
+                            MaterialTheme.typography.titleLarge
+                        }
+                    ).let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    }
                 )
                 Text(
                     "Find every \"$targetLabel\" sound ($foundCount / $TARGET_COUNT)",
-                    style = if (metrics.compactHeight) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium,
+                    style = (
+                        if (metrics.compactHeight) {
+                            MaterialTheme.typography.titleLarge
+                        } else {
+                            MaterialTheme.typography.headlineMedium
+                        }
+                    ).let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(vertical = if (metrics.compactHeight) 2.dp else metrics.spacing)
                 )
@@ -259,6 +293,6 @@ fun LetterHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> 
 @Composable
 private fun LetterHuntScreenPreview() {
     SgbReadTheme {
-        LetterHuntScreen(audio = AudioManager.getInstance(LocalContext.current), onComplete = {}, onBack = {})
+        LetterHuntScreen(audio = null, onComplete = {}, onBack = {})
     }
 }

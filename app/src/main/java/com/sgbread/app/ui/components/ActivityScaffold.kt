@@ -1,5 +1,6 @@
 package com.sgbread.app.ui.components
 
+import android.app.Activity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -29,7 +30,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
@@ -56,6 +59,25 @@ fun ActivityScaffold(
 ) {
     val isAudioPlaying by audio?.isPlaying?.collectAsStateWithLifecycle()
         ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val view = LocalView.current
+
+    DisposableEffect(view) {
+        val statusBarController = if (!view.isInEditMode) {
+            (view.context as? Activity)?.window?.let { window ->
+                WindowCompat.getInsetsController(window, view)
+            }
+        } else {
+            null
+        }
+        val previousLightStatusBars = statusBarController?.isAppearanceLightStatusBars
+        statusBarController?.isAppearanceLightStatusBars = true
+
+        onDispose {
+            if (previousLightStatusBars != null) {
+                statusBarController.isAppearanceLightStatusBars = previousLightStatusBars
+            }
+        }
+    }
 
     DisposableEffect(audio) {
         onDispose { audio?.stopPlayback() }
