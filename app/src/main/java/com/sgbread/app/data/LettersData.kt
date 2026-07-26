@@ -11,9 +11,15 @@ data class PhonicsItem(val letter: Char, val word: String, val image: Int)
  * [image] is a real photo (preferred when present); [icon] is the vector fallback. */
 data class BlendWord(val word: String, val icon: FarmIconKey? = null, val image: Int? = null, val audio: Int? = null)
 
-/** A word built around a target digraph or blend, used in the Module 4 games.
+/** A word built around a target digraph, used in the Module 4 games.
  * [image] is a real photo (preferred when present); [icon] is the vector fallback. */
-data class PatternWord(val word: String, val pattern: String, val icon: FarmIconKey? = null, val image: Int? = null)
+data class PatternWord(
+    val word: String,
+    val pattern: String,
+    val icon: FarmIconKey? = null,
+    val image: Int? = null,
+    val audio: Int? = null
+)
 
 object LettersBank {
 
@@ -75,46 +81,29 @@ object LettersBank {
     )
 
     val patternWords: List<PatternWord> = listOf(
-        PatternWord("chick", "CH", FarmIconKey.CHICK, image = R.drawable.chick),
-        PatternWord("chicken", "CH", FarmIconKey.CHICKEN),
-        PatternWord("sheep", "SH", FarmIconKey.SHEEP, image = R.drawable.sheep),
-        PatternWord("shed", "SH", FarmIconKey.SHED),
-        PatternWord("shovel", "SH", FarmIconKey.SHOVEL, image = R.drawable.shovel),
-        PatternWord("duck", "CK", FarmIconKey.DUCK, image = R.drawable.duck),
-        PatternWord("bee", "EE", FarmIconKey.BEE),
-        PatternWord("seed", "EE", FarmIconKey.SEED),
-        PatternWord("seeds", "EE", FarmIconKey.SEEDS),
-        PatternWord("bean", "EA", FarmIconKey.BEAN),
-        PatternWord("rain", "AI", FarmIconKey.RAIN),
-        PatternWord("goat", "OA", FarmIconKey.GOAT),
-        PatternWord("cow", "OW", FarmIconKey.COW, image = R.drawable.cow),
-        PatternWord("grain", "GR", FarmIconKey.GRAIN),
-        PatternWord("straw", "ST", FarmIconKey.STRAW),
-        PatternWord("spade", "SP", FarmIconKey.SPADE),
-        PatternWord("fish", "SH", image = R.drawable.fish),
-        PatternWord("crab", "CR", image = R.drawable.crab),
-        PatternWord("net", "ET", image = R.drawable.net),
-        PatternWord("well", "LL", image = R.drawable.well),
-        PatternWord("can", "AN", image = R.drawable.can),
-        PatternWord("cat", "AT", image = R.drawable.cat),
-        PatternWord("hat", "AT", image = R.drawable.hat),
-        PatternWord("corn", "OR", image = R.drawable.corn),
-        PatternWord("dog", "OG", image = R.drawable.dog),
-        PatternWord("log", "OG", image = R.drawable.log),
-        PatternWord("flower", "FL", image = R.drawable.flower),
-        PatternWord("fruit", "FR", image = R.drawable.fruit),
-        PatternWord("glove", "GL", image = R.drawable.glove),
-        PatternWord("grass", "GR", image = R.drawable.grass),
-        PatternWord("husk", "SK", image = R.drawable.husk),
-        PatternWord("hut", "UT", image = R.drawable.hut),
-        PatternWord("nut", "UT", image = R.drawable.nut),
-        PatternWord("milk", "LK", image = R.drawable.milk),
-        PatternWord("moth", "TH", image = R.drawable.moth),
-        PatternWord("mud", "UD", image = R.drawable.mud),
-        PatternWord("nest", "ST", image = R.drawable.nest_pattern),
-        PatternWord("pot", "OT", image = R.drawable.pot),
-        PatternWord("sun", "UN", image = R.drawable.sun),
-        PatternWord("wheelbarrow", "WH", image = R.drawable.wheelbarrow),
-        PatternWord("wind", "ND", image = R.drawable.wind)
+        PatternWord("shell", "SH", image = R.drawable.digraph_shell, audio = R.raw.digraph_shell),
+        PatternWord("shirt", "SH", image = R.drawable.digraph_shirt, audio = R.raw.digraph_shirt),
+        PatternWord("shed", "SH", image = R.drawable.digraph_shed, audio = R.raw.digraph_shed),
+        PatternWord("fish", "SH", image = R.drawable.digraph_fish, audio = R.raw.digraph_fish),
+        PatternWord("wash", "SH", image = R.drawable.digraph_wash, audio = R.raw.digraph_wash),
+        PatternWord("trash", "SH", image = R.drawable.digraph_trash, audio = R.raw.digraph_trash),
+        PatternWord("chick", "CH", image = R.drawable.digraph_chick, audio = R.raw.digraph_chick),
+        PatternWord("chat", "CH", image = R.drawable.digraph_chat, audio = R.raw.digraph_chat),
+        PatternWord("chin", "CH", image = R.drawable.digraph_chin, audio = R.raw.digraph_chin),
+        PatternWord("chair", "CH", image = R.drawable.digraph_chair, audio = R.raw.digraph_chair),
+        PatternWord("lick", "CK", image = R.drawable.digraph_lick, audio = R.raw.digraph_lick),
+        PatternWord("rock", "CK", image = R.drawable.digraph_rock, audio = R.raw.digraph_rock),
+        PatternWord("lock", "CK", image = R.drawable.digraph_lock, audio = R.raw.digraph_lock),
+        PatternWord("pick", "CK", image = R.drawable.digraph_pick, audio = R.raw.digraph_pick),
+        PatternWord("sack", "CK", image = R.drawable.digraph_sack, audio = R.raw.digraph_sack),
+        PatternWord("ring", "NG", image = R.drawable.digraph_ring, audio = R.raw.digraph_ring),
+        PatternWord("king", "NG", image = R.drawable.digraph_king, audio = R.raw.digraph_king),
+        PatternWord("wing", "NG", image = R.drawable.digraph_wing, audio = R.raw.digraph_wing),
+        PatternWord("sing", "NG", image = R.drawable.digraph_sing, audio = R.raw.digraph_sing),
+        PatternWord("phone", "PH", image = R.drawable.digraph_phone, audio = R.raw.digraph_phone),
+        PatternWord("photo", "PH", image = R.drawable.digraph_photo, audio = R.raw.digraph_photo),
+        PatternWord("graph", "PH", image = R.drawable.digraph_graph, audio = R.raw.digraph_graph),
+        PatternWord("bath", "TH", image = R.drawable.digraph_bath, audio = R.raw.digraph_bath),
+        PatternWord("cloth", "TH", image = R.drawable.digraph_cloth, audio = R.raw.digraph_cloth)
     )
 }

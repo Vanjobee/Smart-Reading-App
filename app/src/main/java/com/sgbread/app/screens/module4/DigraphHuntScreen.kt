@@ -56,7 +56,9 @@ import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
-private val huntWords = LettersBank.patternWords.distinctBy { it.word }
+private val huntWords = LettersBank.patternWords
+    .filter { it.image != null && it.audio != null }
+    .distinctBy { it.word }
 private const val DIGRAPH_HUNT_CHOICE_COUNT = 6
 
 private fun scatterPositions(
@@ -132,7 +134,7 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
         (distractors + target).shuffled()
     }
 
-    fun speakPrompt() = audio?.playWord(target.word, rate = 0.9f)
+    fun speakPrompt() = audio.playPatternWord(target, rate = 0.9f)
     LaunchedEffect(roundIndex) {
         wrongWord = null
         inputLocked = false
@@ -145,13 +147,14 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
         draggingWord = null
         audio?.stopPlayback()
         if (word == target.word) {
-            audio?.playWord(target.word, rate = 0.9f) {
+            audio.playPatternWord(target, rate = 0.9f) {
                 pendingPraise = true
             }
         } else {
             wrongWord = word
-            audio?.playWord(word, rate = 0.9f) {
-                audio.playSfx(Sfx.INCORRECT)
+            val wrongChoice = choices.firstOrNull { it.word == word }
+            audio.playPatternWord(wrongChoice ?: target, rate = 0.9f) {
+                audio?.playSfx(Sfx.INCORRECT)
                 feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
             }
         }

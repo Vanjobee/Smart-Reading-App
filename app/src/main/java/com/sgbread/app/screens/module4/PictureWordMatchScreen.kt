@@ -52,8 +52,6 @@ import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.SoilBrown
 import kotlinx.coroutines.delay
 
-private val PICTURE_WORD_MATCH_EXCLUDED_WORDS = setOf("goat", "rice")
-
 @OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -64,7 +62,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
     // Freshly shuffled each time the screen is entered, not just once per app launch.
     val rounds = remember {
         LettersBank.patternWords
-            .filter { it.word !in PICTURE_WORD_MATCH_EXCLUDED_WORDS }
+            .filter { it.image != null && it.audio != null }
             .distinctBy { it.word }
             .shuffled()
             .take(10)
@@ -83,7 +81,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
         (distractors + round.word).shuffled()
     }
 
-    fun speakWord() = audio?.playWord(round.word, rate = 0.85f)
+    fun speakWord() = audio.playPatternWord(round, rate = 0.85f)
 
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
@@ -109,7 +107,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
             if (audio == null) {
                 pendingPraise = true
             } else {
-                audio.playWord(round.word, rate = 0.9f) {
+                audio.playPatternWord(round, rate = 0.9f) {
                     pendingPraise = true
                 }
             }

@@ -55,11 +55,7 @@ import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.SoilBrown
 import kotlinx.coroutines.delay
 
-// Two-letter sound patterns used by Digraph Sound. Some extra word-family patterns are
-// included so the activity has 10 reliable rounds with both a picture and recorded word audio.
-private val DIGRAPH_PATTERNS = setOf("CH", "SH", "TH", "CK", "OW", "OR", "OG", "UT", "LK")
-private val DIGRAPH_SOUND_WORDS = listOf("chick", "sheep", "shovel", "duck", "cow", "moth", "corn", "dog", "nut", "milk")
-private val DIGRAPH_SOUND_EXCLUDED_WORDS = setOf("goat", "rice", "bee")
+private val DIGRAPH_PATTERNS = setOf("CH", "SH", "TH", "CK", "NG", "PH")
 private const val DIGRAPH_CHOICE_COUNT = 4
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -72,11 +68,10 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
     val rounds = remember {
         LettersBank.patternWords
             .filter { it.pattern in DIGRAPH_PATTERNS }
-            .filter { it.word in DIGRAPH_SOUND_WORDS }
-            .filter { it.word.lowercase() !in DIGRAPH_SOUND_EXCLUDED_WORDS }
-            .filter { it.image != null }
+            .filter { it.image != null && it.audio != null }
             .distinctBy { it.word }
-            .sortedBy { DIGRAPH_SOUND_WORDS.indexOf(it.word) }
+            .shuffled()
+            .take(10)
     }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
@@ -95,7 +90,7 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
         (distractors + round.pattern).shuffled()
     }
 
-    fun speakPicture() = audio?.playWord(round.word, rate = 0.9f)
+    fun speakPicture() = audio.playPatternWord(round, rate = 0.9f)
 
     LaunchedEffect(roundIndex) {
         wrongPattern = null
@@ -108,7 +103,7 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
         if (roundLocked) return
         roundLocked = true
         audio?.stopPlayback()
-        audio?.playPatternSound(pattern)
+        audio.playDigraphSound(pattern)
         if (pattern == round.pattern) {
             correctPattern = pattern
             pendingPraise = true
