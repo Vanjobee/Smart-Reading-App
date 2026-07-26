@@ -49,11 +49,14 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.data.FarmIconKey
 import com.sgbread.app.data.LettersBank
+import com.sgbread.app.data.PhonicsItem
 import com.sgbread.app.ui.components.ActivityCompleteOverlay
 import com.sgbread.app.ui.components.ActivityScaffold
 import com.sgbread.app.ui.components.ResponsiveColumn
 import com.sgbread.app.ui.components.activityLayoutMetrics
+import com.sgbread.app.ui.icons.FarmIcon
 import com.sgbread.app.ui.theme.CreamWhite
 import com.sgbread.app.ui.theme.RiceGreenDark
 import com.sgbread.app.ui.theme.SgbReadTheme
@@ -74,6 +77,20 @@ private data class GlyphMask(
     val revealRadius: Float,
     val brushWidth: Float
 )
+
+private data class TraceLetterItem(
+    val letter: Char,
+    val word: String,
+    val image: Int? = null,
+    val icon: FarmIconKey? = null
+)
+
+private fun PhonicsItem.toTraceLetterItem(): TraceLetterItem =
+    if (letter == 'R' && word == "rice") {
+        TraceLetterItem(letter = 'R', word = "rat", icon = FarmIconKey.RAT)
+    } else {
+        TraceLetterItem(letter = letter, word = word, image = image)
+    }
 
 private fun buildGlyphMask(glyph: String, width: Float, height: Float): GlyphMask? {
     if (width <= 0f || height <= 0f) return null
@@ -120,7 +137,7 @@ fun TraceLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
     val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
 
     // Freshly shuffled each time the screen is entered, so replays don't always start on A-F.
-    val traceLetters = remember { LettersBank.phonicsItems.shuffled().take(10) }
+    val traceLetters = remember { LettersBank.phonicsItems.map { it.toTraceLetterItem() }.shuffled().take(10) }
     var stepIndex by remember { mutableStateOf(0) }
     // Finished strokes plus the one currently being drawn, kept separate so lifting a
     // finger between strokes (e.g. the crossbar of "A") doesn't erase earlier ink.
@@ -333,18 +350,28 @@ fun TraceLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                                 .padding(if (metrics.compactHeight) 22.dp else 28.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Image(
-                                painter = painterResource(popupItem.image),
-                                contentDescription = popupItem.word,
-                                modifier = Modifier.size(
-                                    if (metrics.compactHeight) {
-                                        metrics.largePictureSize
-                                    } else {
-                                        metrics.largePictureSize * 1.15f
-                                    }
-                                ),
-                                contentScale = ContentScale.Fit
-                            )
+                            val rewardImageSize =
+                                if (metrics.compactHeight) {
+                                    metrics.largePictureSize
+                                } else {
+                                    metrics.largePictureSize * 1.15f
+                                }
+                            val rewardImage = popupItem.image
+                            val rewardIcon = popupItem.icon
+                            if (rewardImage != null) {
+                                Image(
+                                    painter = painterResource(rewardImage),
+                                    contentDescription = popupItem.word,
+                                    modifier = Modifier.size(rewardImageSize),
+                                    contentScale = ContentScale.Fit
+                                )
+                            } else if (rewardIcon != null) {
+                                FarmIcon(
+                                    rewardIcon,
+                                    modifier = Modifier.size(rewardImageSize),
+                                    background = null
+                                )
+                            }
                             Text(
                                 "\"$popupGlyph\" is for \"${popupItem.word}\"",
                                 style = MaterialTheme.typography.titleLarge,
