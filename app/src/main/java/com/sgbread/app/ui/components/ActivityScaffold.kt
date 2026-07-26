@@ -75,7 +75,9 @@ fun ActivityScaffold(
     var showBackConfirmation by remember { mutableStateOf(false) }
 
     fun playTap() {
-        audio?.stopPlayback()
+        // Do not stop the activity audio here. Correct-answer flows often advance
+        // from that audio's completion callback; cancelling it would strand the
+        // current round after the learner closes this dialog.
         audio?.playSfx(Sfx.TAP)
     }
 
