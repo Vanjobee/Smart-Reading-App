@@ -1,8 +1,10 @@
 package com.sgbread.app.screens.module4
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,19 +19,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
 import com.sgbread.app.data.LettersBank
@@ -45,6 +53,7 @@ import com.sgbread.app.ui.theme.CreamWhite
 import com.sgbread.app.ui.theme.RiceGreenDark
 import com.sgbread.app.ui.theme.SgbReadTheme
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 private val huntWords = LettersBank.patternWords.distinctBy { it.word }
@@ -96,8 +105,12 @@ private fun scatterPositions(
  * One target word at a time: the child sees/hears the word, then picks the
  * matching picture from scattered image choices.
  */
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
     // Only words with real image assets are used here because this activity's choices
     // are picture cards, not text/digraph cards.
     val huntRounds = remember { huntWords.filter { it.image != null }.shuffled().take(10) }
@@ -106,6 +119,9 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
     var wrongWord by remember { mutableStateOf<String?>(null) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
+    var inputLocked by remember { mutableStateOf(false) }
+    val draggedOffsets = remember(roundIndex) { mutableStateMapOf<String, Offset>() }
+    var draggingWord by remember(roundIndex) { mutableStateOf<String?>(null) }
 
     val target = huntRounds[roundIndex]
     val choices = remember(roundIndex) {
@@ -116,21 +132,25 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         (distractors + target).shuffled()
     }
 
-    fun speakPrompt() = audio.playWord(target.word, rate = 0.9f)
+    fun speakPrompt() = audio?.playWord(target.word, rate = 0.9f)
     LaunchedEffect(roundIndex) {
         wrongWord = null
+        inputLocked = false
         speakPrompt()
     }
 
     fun onPick(word: String) {
-        audio.stopPlayback()
+        if (inputLocked || feedback !is AnswerFeedback.None) return
+        inputLocked = true
+        draggingWord = null
+        audio?.stopPlayback()
         if (word == target.word) {
-            audio.playWord(target.word, rate = 0.9f) {
+            audio?.playWord(target.word, rate = 0.9f) {
                 pendingPraise = true
             }
         } else {
             wrongWord = word
-            audio.playWord(word, rate = 0.9f) {
+            audio?.playWord(word, rate = 0.9f) {
                 audio.playSfx(Sfx.INCORRECT)
                 feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
             }
@@ -140,7 +160,7 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
             delay(250)
-            audio.playSfx(Sfx.CORRECT)
+            audio?.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
         }
@@ -150,10 +170,10 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         val current = feedback
         if (current is AnswerFeedback.Correct) {
             delay(850)
-            while (audio.isPlaying.value) delay(100)
+            while (audio?.isPlaying?.value == true) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == huntRounds.lastIndex) {
-                audio.playSfx(Sfx.HARVEST)
+                audio?.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 roundIndex += 1
@@ -162,6 +182,7 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
             delay(750)
             feedback = AnswerFeedback.None
             wrongWord = null
+            inputLocked = false
         }
     }
 
@@ -171,12 +192,26 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         onReplayInstructions = { speakPrompt() },
         feedback = feedback,
         audio = audio,
-        blockInputDuringAudio = false
+        blockInputDuringAudio = false,
+        titleTextScale = responsiveTextScale
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
             ResponsiveColumn(metrics = metrics, modifier = Modifier.padding(padding)) {
-                Text("Round ${roundIndex + 1} of ${huntRounds.size}", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Round ${roundIndex + 1} of ${huntRounds.size}",
+                    style = MaterialTheme.typography.bodyMedium.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    }
+                )
 
                 @Composable
                 fun QuestionPane() {
@@ -190,7 +225,7 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                                 .background(CreamWhite, RoundedCornerShape(22.dp))
                                 .border(4.dp, RiceGreenDark, RoundedCornerShape(22.dp))
                                 .clickable {
-                                    audio.stopPlayback()
+                                    audio?.stopPlayback()
                                     speakPrompt()
                                 }
                                 .padding(horizontal = 18.dp, vertical = if (metrics.compactHeight) 12.dp else 18.dp),
@@ -198,7 +233,7 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                         ) {
                             Text(
                                 target.word,
-                                fontSize = if (metrics.compactHeight) 30.sp else 38.sp,
+                                fontSize = (if (metrics.compactHeight) 30.sp else 38.sp) * responsiveTextScale,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = RiceGreenDark,
                                 textAlign = TextAlign.Center
@@ -206,9 +241,15 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                         }
                         Text(
                             "Find the picture for \"${target.word}\"",
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                                baseStyle.copy(
+                                    color = CreamWhite,
+                                    fontSize = baseStyle.fontSize * responsiveTextScale
+                                )
+                            },
                             fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
@@ -228,7 +269,7 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                         } else {
                             metrics.choiceImageSize * 0.82f
                         }
-                        val cardPx = with(density) { (imageSize + 28.dp).toPx() }
+                        val cardPx = with(density) { (imageSize + 32.dp).toPx() }
                         val widthPx = with(density) { maxWidth.toPx() }
                         val heightPx = with(density) { maxHeight.toPx() }
                         val positions = remember(roundIndex, widthPx, heightPx, cardPx) {
@@ -236,8 +277,8 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                         }
                         choices.forEachIndexed { index, w ->
                             val pos = positions.getOrElse(index) { Offset.Zero }
-                            val offsetX = with(density) { pos.x.toDp() }
-                            val offsetY = with(density) { pos.y.toDp() }
+                            val dragOffset = draggedOffsets[w.word] ?: Offset.Zero
+                            val isDragging = draggingWord == w.word
                             PictureChoiceCard(
                                 icon = w.icon,
                                 image = w.image,
@@ -248,9 +289,45 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                                     wrongWord == w.word -> ChoiceState.WRONG
                                     else -> ChoiceState.IDLE
                                 },
-                                enabled = feedback is AnswerFeedback.None,
+                                enabled = !inputLocked && feedback is AnswerFeedback.None,
                                 onClick = { onPick(w.word) },
-                                modifier = Modifier.offset(x = offsetX, y = offsetY)
+                                modifier = Modifier
+                                    .offset {
+                                        IntOffset(
+                                            (pos.x + dragOffset.x).roundToInt(),
+                                            (pos.y + dragOffset.y).roundToInt()
+                                        )
+                                    }
+                                    .zIndex(if (isDragging) 1f else 0f)
+                                    .graphicsLayer {
+                                        val pickedUpScale = if (isDragging) 1.08f else 1f
+                                        scaleX = pickedUpScale
+                                        scaleY = pickedUpScale
+                                    }
+                                    .pointerInput(roundIndex, w.word, widthPx, heightPx, cardPx, inputLocked) {
+                                        detectDragGestures(
+                                            onDragStart = {
+                                                if (!inputLocked) draggingWord = w.word
+                                            },
+                                            onDrag = { change, dragAmount ->
+                                                if (inputLocked || draggingWord != w.word) {
+                                                    return@detectDragGestures
+                                                }
+                                                change.consume()
+                                                val currentOffset = draggedOffsets[w.word] ?: Offset.Zero
+                                                val currentPosition = pos + currentOffset
+                                                val nextPosition = Offset(
+                                                    x = (currentPosition.x + dragAmount.x)
+                                                        .coerceIn(0f, (widthPx - cardPx).coerceAtLeast(0f)),
+                                                    y = (currentPosition.y + dragAmount.y)
+                                                        .coerceIn(0f, (heightPx - cardPx).coerceAtLeast(0f))
+                                                )
+                                                draggedOffsets[w.word] = nextPosition - pos
+                                            },
+                                            onDragEnd = { draggingWord = null },
+                                            onDragCancel = { draggingWord = null }
+                                        )
+                                    }
                             )
                         }
                     }
@@ -273,7 +350,7 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
 private fun DigraphHuntScreenPreview() {
     SgbReadTheme {
         DigraphHuntScreen(
-            audio = AudioManager.getInstance(LocalContext.current),
+            audio = null,
             onComplete = {},
             onBack = {}
         )

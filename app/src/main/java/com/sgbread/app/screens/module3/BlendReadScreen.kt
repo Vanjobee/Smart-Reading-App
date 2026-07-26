@@ -27,7 +27,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
 import com.sgbread.app.data.BlendWord
@@ -100,7 +99,7 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
         } else {
             correctWord = null
             audio?.playWord(choice.word, rate = 0.9f) {
-                audio?.playSfx(Sfx.INCORRECT)
+                audio.playSfx(Sfx.INCORRECT)
                 wrongWord = choice.word
                 feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
             }

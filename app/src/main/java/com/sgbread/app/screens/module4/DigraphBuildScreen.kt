@@ -1,5 +1,6 @@
 package com.sgbread.app.screens.module4
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -62,8 +63,12 @@ private val DIGRAPH_SOUND_EXCLUDED_WORDS = setOf("goat", "rice", "bee")
 private const val DIGRAPH_CHOICE_COUNT = 4
 
 @OptIn(ExperimentalLayoutApi::class)
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
     val rounds = remember {
         LettersBank.patternWords
             .filter { it.pattern in DIGRAPH_PATTERNS }
@@ -90,7 +95,7 @@ fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
         (distractors + round.pattern).shuffled()
     }
 
-    fun speakPicture() = audio.playWord(round.word, rate = 0.9f)
+    fun speakPicture() = audio?.playWord(round.word, rate = 0.9f)
 
     LaunchedEffect(roundIndex) {
         wrongPattern = null
@@ -101,8 +106,8 @@ fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
 
     fun onPick(pattern: String) {
         if (roundLocked) return
-        audio.stopPlayback()
-        audio.playPatternSound(pattern)
+        audio?.stopPlayback()
+        audio?.playPatternSound(pattern)
         if (pattern == round.pattern) {
             correctPattern = pattern
             roundLocked = true
@@ -116,7 +121,7 @@ fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
             delay(600)
-            audio.playSfx(Sfx.CORRECT)
+            audio?.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
         }
@@ -126,10 +131,10 @@ fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
         val current = feedback
         if (current is AnswerFeedback.Correct) {
             delay(850)
-            while (audio.isPlaying.value) delay(100)
+            while (audio?.isPlaying?.value == true) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
-                audio.playSfx(Sfx.HARVEST)
+                audio?.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 roundIndex += 1
@@ -147,10 +152,16 @@ fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
         onReplayInstructions = { speakPicture() },
         feedback = feedback,
         audio = audio,
-        blockInputDuringAudio = false
+        blockInputDuringAudio = false,
+        titleTextScale = responsiveTextScale
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -160,14 +171,26 @@ fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
             ) {
                 Text(
                     "Round ${roundIndex + 1} of ${rounds.size}",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    }
                 )
                 Text(
                     "Tap the picture, then choose its digraph sound",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = metrics.spacing)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = metrics.spacing)
                 )
 
                 Column(
@@ -181,7 +204,7 @@ fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                         word = round,
                         imageSize = metrics.largePictureSize,
                         onClick = {
-                            audio.stopPlayback()
+                            audio?.stopPlayback()
                             speakPicture()
                         }
                     )
@@ -293,7 +316,7 @@ private fun DigraphSoundChoice(
 private fun DigraphBuildScreenPreview() {
     SgbReadTheme {
         DigraphBuildScreen(
-            audio = AudioManager.getInstance(LocalContext.current),
+            audio = null,
             onComplete = {},
             onBack = {}
         )

@@ -54,9 +54,9 @@ private val MODE_3_HOTSPOTS = listOf(
 )
 
 private val MODE_4_HOTSPOTS = listOf(
-    ArtworkHotspot("digraph_build", "Open Digraph Sound", 75f, 675f, 630f, 1035f),
-    ArtworkHotspot("picture_word_match", "Open Picture-to-Word Match", 60f, 1035f, 860f, 1338f),
-    ArtworkHotspot("digraph_hunt", "Open Digraph Hunt", 170f, 1338f, 825f, 1610f)
+    ArtworkHotspot("digraph_build", "Open Digraph Sound", 145f, 830f, 795f, 1065f),
+    ArtworkHotspot("picture_word_match", "Open Picture-to-Word Match", 145f, 1065f, 795f, 1300f),
+    ArtworkHotspot("digraph_hunt", "Open Digraph Hunt", 145f, 1300f, 795f, 1540f)
 )
 
 @Composable

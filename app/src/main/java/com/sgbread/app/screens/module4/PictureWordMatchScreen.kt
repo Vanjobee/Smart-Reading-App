@@ -1,10 +1,12 @@
 package com.sgbread.app.screens.module4
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -26,9 +28,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sgbread.app.audio.AudioManager
@@ -52,8 +55,12 @@ import kotlinx.coroutines.delay
 private val PICTURE_WORD_MATCH_EXCLUDED_WORDS = setOf("goat", "rice")
 
 @OptIn(ExperimentalLayoutApi::class)
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
     // Freshly shuffled each time the screen is entered, not just once per app launch.
     val rounds = remember {
         LettersBank.patternWords
@@ -74,14 +81,14 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
         (distractors + round.word).shuffled()
     }
 
-    fun speakWord() = audio.playWord(round.word, rate = 0.85f)
+    fun speakWord() = audio?.playWord(round.word, rate = 0.85f)
 
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
         wrongWord = null
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio.playRecordedPrompt("Tap the picture!") {
+            audio?.playRecordedPrompt("Tap the picture!") {
                 speakWord()
             }
             return@LaunchedEffect
@@ -90,13 +97,13 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
     }
 
     fun onPick(word: String) {
-        audio.stopPlayback()
+        audio?.stopPlayback()
         if (word == round.word) {
-            audio.playWord(round.word, rate = 0.9f) {
+            audio?.playWord(round.word, rate = 0.9f) {
                 pendingPraise = true
             }
         } else {
-            audio.playSfx(Sfx.INCORRECT)
+            audio?.playSfx(Sfx.INCORRECT)
             wrongWord = word
             feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
         }
@@ -105,7 +112,7 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
             delay(250)
-            audio.playSfx(Sfx.CORRECT)
+            audio?.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
         }
@@ -115,10 +122,10 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
         val current = feedback
         if (current is AnswerFeedback.Correct) {
             delay(850)
-            while (audio.isPlaying.value) delay(100)
+            while (audio?.isPlaying?.value == true) delay(100)
             feedback = AnswerFeedback.None
             if (roundIndex == rounds.lastIndex) {
-                audio.playSfx(Sfx.HARVEST)
+                audio?.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 roundIndex += 1
@@ -126,6 +133,7 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
         } else if (current is AnswerFeedback.Incorrect) {
             delay(750)
             feedback = AnswerFeedback.None
+            wrongWord = null
         }
     }
 
@@ -135,10 +143,16 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
         onReplayInstructions = { speakWord() },
         feedback = feedback,
         audio = audio,
-        blockInputDuringAudio = false
+        blockInputDuringAudio = false,
+        titleTextScale = responsiveTextScale
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -146,12 +160,28 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
                     .padding(horizontal = metrics.horizontalPadding, vertical = metrics.verticalPadding),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Word ${roundIndex + 1} of ${rounds.size}", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Word ${roundIndex + 1} of ${rounds.size}",
+                    style = MaterialTheme.typography.bodyMedium.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    }
+                )
                 Text(
                     "Tap the picture to hear it, then pick the spelling",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = metrics.spacing)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = metrics.spacing)
                 )
                 TwoPaneActivityBody(
                     metrics = metrics,
@@ -164,7 +194,7 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
                                 modifier = Modifier
                                     .size(metrics.largePictureSize)
                                     .clickable {
-                                        audio.stopPlayback()
+                                        audio?.stopPlayback()
                                         speakWord()
                                     },
                                 contentScale = ContentScale.Fit
@@ -175,7 +205,7 @@ fun PictureWordMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: 
                                 modifier = Modifier
                                     .size(metrics.largePictureSize)
                                     .clickable {
-                                        audio.stopPlayback()
+                                        audio?.stopPlayback()
                                         speakWord()
                                     }
                             )
@@ -224,7 +254,7 @@ private fun SpellingChoiceBox(
         ChoiceState.SELECTED -> CorrectGreen
         ChoiceState.IDLE -> Color(0x33000000)
     }
-    BoxWithConstraints(
+    Box(
         modifier = modifier
             .background(CreamWhite, RoundedCornerShape(10.dp))
             .border(3.dp, borderColor, RoundedCornerShape(10.dp))
@@ -246,7 +276,7 @@ private fun SpellingChoiceBox(
 private fun PictureWordMatchScreenPreview() {
     SgbReadTheme {
         PictureWordMatchScreen(
-            audio = AudioManager.getInstance(LocalContext.current),
+            audio = null,
             onComplete = {},
             onBack = {}
         )

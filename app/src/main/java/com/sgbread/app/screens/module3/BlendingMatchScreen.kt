@@ -113,7 +113,7 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
             correctWord = null
             wrongWord = choice.word
             audio?.playWord(choice.word, rate = 0.9f) {
-                audio?.playSfx(Sfx.INCORRECT)
+                audio.playSfx(Sfx.INCORRECT)
                 feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
             }
         }
