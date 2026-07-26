@@ -135,7 +135,8 @@ fun ProfileScreen(
                         Text(
                             "Reset All Progress",
                             style = MaterialTheme.typography.labelLarge.let { baseStyle ->
-                                baseStyle.copy(fontSize = baseStyle.fontSize * responsiveTextScale)
+                                baseStyle.copy(fontSize = baseStyle.fontSize * responsiveTextScale,
+                                               color = CreamWhite)
                             },
                             fontWeight = FontWeight.Bold
                         )

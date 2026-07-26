@@ -1,5 +1,6 @@
 package com.sgbread.app.screens.module1
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -37,6 +38,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -128,7 +130,6 @@ private fun scatterPositions(
             val nearestDistance = positions.minOfOrNull { (it - candidate).getDistance() } ?: Float.MAX_VALUE
             if (nearestDistance >= minDistance) {
                 bestCandidate = candidate
-                bestDistance = nearestDistance
                 break
             }
             if (nearestDistance > bestDistance) {
@@ -144,9 +145,13 @@ private fun scatterPositions(
     return positions
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+fun LetterBasketScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> Unit) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
+
     // Freshly shuffled each time the screen is entered, so replays don't always start on A-C.
     val basketRounds = remember {
         LettersBank.phonicsItems
@@ -188,7 +193,7 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
         isHoveringBasket = false
     }
 
-    fun instructions() = audio.playRecordedPrompt(
+    fun instructions() = audio?.playRecordedPrompt(
         "Tap the sample letter to hear it, then drag its match into the basket.",
         rate = 0.9f
     )
@@ -197,7 +202,7 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
     fun evaluate(choiceId: Int) {
         val choice = choices.firstOrNull { it.id == choiceId } ?: return
         if (choice.isTarget) {
-            audio.playSfx(Sfx.CORRECT)
+            audio?.playSfx(Sfx.CORRECT)
             val updatedChoices = choices.map {
                 if (it.id == choiceId) it.copy(found = true) else it
             }
@@ -208,12 +213,12 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                 lockInput = true
                 wordPopupVisible = true
                 wordSoundFinished = false
-                audio.speakLetterNameThenWord(target.letter, target.word, rate = 0.9f, onComplete = {
+                audio?.speakLetterNameThenWord(target.letter, target.word, rate = 0.9f, onComplete = {
                     wordSoundFinished = true
                 })
             }
         } else {
-            audio.playSfx(Sfx.INCORRECT)
+            audio?.playSfx(Sfx.INCORRECT)
             lastWrongChoiceId = choiceId
             feedback = AnswerFeedback.Incorrect("Try another letter!")
         }
@@ -228,7 +233,7 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
             draggingChoiceId = null
             dragOffset = Offset.Zero
             if (roundIndex == basketRounds.size - 1) {
-                audio.playSfx(Sfx.HARVEST)
+                audio?.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
                 roundIndex += 1
@@ -253,10 +258,16 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
         onReplayInstructions = { instructions() },
         feedback = feedback,
         audio = audio,
-        blockInputDuringAudio = false
+        blockInputDuringAudio = false,
+        titleTextScale = responsiveTextScale
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.42f))
+            )
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -266,13 +277,29 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
             ) {
                 Text(
                     "Drag all matching letters into the basket",
-                    style = if (metrics.compactHeight) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
+                    style = (
+                        if (metrics.compactHeight) {
+                            MaterialTheme.typography.titleSmall
+                        } else {
+                            MaterialTheme.typography.titleMedium
+                        }
+                    ).let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = if (metrics.compactHeight) 1.dp else 4.dp)
                 )
                 Text(
                     "Round ${roundIndex + 1} of ${basketRounds.size} • Found $foundCount / $BASKET_TARGET_COUNT",
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
                     modifier = Modifier.padding(bottom = if (metrics.compactHeight) 4.dp else 8.dp)
                 )
 
@@ -295,10 +322,10 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                                     .minByOrNull { (_, pos) -> (pos - offset).getDistance() }
                                 if (nearest != null && (nearest.value - offset).getDistance() < startHitRadius) {
                                     val choice = choices.first { it.id == nearest.key }
-                                    audio.stopPlayback()
+                                audio?.stopPlayback()
                                     draggingChoiceId = choice.id
                                     dragOffset = Offset.Zero
-                                    audio.playLetterName(choice.letter.uppercaseChar())
+                                    audio?.playLetterName(choice.letter.uppercaseChar())
                                 }
                             },
                             onDrag = { _, dragAmount ->
@@ -352,8 +379,8 @@ fun LetterBasketScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                             fontSize = basketFontSize,
                             onClick = {
                                 if (!lockInput) {
-                                    audio.stopPlayback()
-                                    audio.playLetterName(target.letter)
+                                    audio?.stopPlayback()
+                                    audio?.playLetterName(target.letter)
                                 }
                             },
                             modifier = Modifier.onGloballyPositioned { coords ->
@@ -506,6 +533,6 @@ private fun BasketWithLetter(
 @Composable
 private fun LetterBasketScreenPreview() {
     SgbReadTheme {
-        LetterBasketScreen(audio = AudioManager.getInstance(androidx.compose.ui.platform.LocalContext.current), onComplete = {}, onBack = {})
+        LetterBasketScreen(audio = null, onComplete = {}, onBack = {})
     }
 }
