@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -94,31 +93,30 @@ private fun scatterPositions(
 }
 
 /**
- * One target word at a time: the child sees/hears the target digraph, then picks the
- * matching word from two large picture choices (1 correct + 1 distractor).
+ * One target word at a time: the child sees/hears the word, then picks the
+ * matching picture from scattered image choices.
  */
 @Composable
 fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
-    // Every pattern in the bank is fair game now that a round only needs one matching
-    // word (not "find all"); freshly shuffled each time the screen is entered.
-    val huntPatterns = remember { huntWords.map { it.pattern }.distinct().shuffled().take(10) }
+    // Only words with real image assets are used here because this activity's choices
+    // are picture cards, not text/digraph cards.
+    val huntRounds = remember { huntWords.filter { it.image != null }.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongWord by remember { mutableStateOf<String?>(null) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
-    val targetPattern = huntPatterns[roundIndex]
-    val target = remember(roundIndex) { huntWords.filter { it.pattern == targetPattern }.random() }
+    val target = huntRounds[roundIndex]
     val choices = remember(roundIndex) {
         val distractors = huntWords
-            .filter { it.pattern != targetPattern }
+            .filter { it.image != null && it.word != target.word }
             .shuffled()
             .take(DIGRAPH_HUNT_CHOICE_COUNT - 1)
         (distractors + target).shuffled()
     }
 
-    fun speakPrompt() = audio.playPatternSound(targetPattern)
+    fun speakPrompt() = audio.playWord(target.word, rate = 0.9f)
     LaunchedEffect(roundIndex) {
         wrongWord = null
         speakPrompt()
@@ -131,9 +129,11 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                 pendingPraise = true
             }
         } else {
-            audio.playSfx(Sfx.INCORRECT)
             wrongWord = word
-            feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
+            audio.playWord(word, rate = 0.9f) {
+                audio.playSfx(Sfx.INCORRECT)
+                feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
+            }
         }
     }
 
@@ -152,7 +152,7 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
             delay(850)
             while (audio.isPlaying.value) delay(100)
             feedback = AnswerFeedback.None
-            if (roundIndex == huntPatterns.lastIndex) {
+            if (roundIndex == huntRounds.lastIndex) {
                 audio.playSfx(Sfx.HARVEST)
                 finished = true
             } else {
@@ -176,7 +176,7 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val metrics = activityLayoutMetrics(maxWidth, maxHeight)
             ResponsiveColumn(metrics = metrics, modifier = Modifier.padding(padding)) {
-                Text("Round ${roundIndex + 1} of ${huntPatterns.size}", style = MaterialTheme.typography.bodyMedium)
+                Text("Round ${roundIndex + 1} of ${huntRounds.size}", style = MaterialTheme.typography.bodyMedium)
 
                 @Composable
                 fun QuestionPane() {
@@ -186,24 +186,26 @@ fun DigraphHuntScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () ->
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(if (metrics.compactHeight) 82.dp else 96.dp)
+                                .fillMaxWidth(0.66f)
                                 .background(CreamWhite, RoundedCornerShape(22.dp))
                                 .border(4.dp, RiceGreenDark, RoundedCornerShape(22.dp))
                                 .clickable {
                                     audio.stopPlayback()
-                                    audio.playPatternSound(targetPattern)
-                                },
+                                    speakPrompt()
+                                }
+                                .padding(horizontal = 18.dp, vertical = if (metrics.compactHeight) 12.dp else 18.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                targetPattern,
-                                fontSize = if (metrics.compactHeight) 34.sp else 40.sp,
+                                target.word,
+                                fontSize = if (metrics.compactHeight) 30.sp else 38.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = RiceGreenDark
+                                color = RiceGreenDark,
+                                textAlign = TextAlign.Center
                             )
                         }
                         Text(
-                            "Find the word with \"$targetPattern\"",
+                            "Find the picture for \"${target.word}\"",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center

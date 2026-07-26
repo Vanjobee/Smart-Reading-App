@@ -5,15 +5,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -32,6 +38,7 @@ import com.sgbread.app.ui.components.ArtworkHotspot
 import com.sgbread.app.ui.components.ArtworkHotspotOverlay
 import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.CreamWhite
+import com.sgbread.app.ui.theme.RiceGreenDark
 import com.sgbread.app.ui.theme.TextBrown
 
 private val MODE_1_HOTSPOTS = listOf(
@@ -52,7 +59,7 @@ private val MODE_3_HOTSPOTS = listOf(
 )
 
 private val MODE_4_HOTSPOTS = listOf(
-    ArtworkHotspot("digraph_build", "Open Listen and Build", 75f, 675f, 630f, 1035f),
+    ArtworkHotspot("digraph_build", "Open Digraph Sound", 75f, 675f, 630f, 1035f),
     ArtworkHotspot("picture_word_match", "Open Picture-to-Word Match", 60f, 1035f, 860f, 1338f),
     ArtworkHotspot("digraph_hunt", "Open Digraph Hunt", 170f, 1338f, 825f, 1610f)
 )
@@ -149,6 +156,31 @@ private fun ModuleScreenContent(
                 .background(CreamWhite.copy(alpha = 0.88f))
         ) {
             Icon(Icons.Filled.AccountCircle, contentDescription = "Profile", tint = TextBrown)
+        }
+
+        if (module.number == 3) {
+            Button(
+                onClick = { onActivitySelected("blending_match") },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(horizontal = 28.dp, vertical = 18.dp)
+                    .fillMaxWidth()
+                    .shadow(10.dp, RoundedCornerShape(24.dp)),
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = RiceGreenDark,
+                    contentColor = CreamWhite
+                ),
+                enabled = selectorsEnabled
+            ) {
+                Text(
+                    "Blending Match",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
         }
     }
 }

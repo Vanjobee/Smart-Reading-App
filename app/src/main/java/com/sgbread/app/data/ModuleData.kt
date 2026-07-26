@@ -48,7 +48,8 @@ object Modules {
         icon = FarmIconKey.SPROUT_GROWING,
         activities = listOf(
             ActivityInfo("m3a2", "Supply the Missing Letter", "Complete the missing letter", "missing_letter"),
-            ActivityInfo("m3a3", "Blend and Read", "Listen, blend the sounds, choose the word", "blend_read")
+            ActivityInfo("m3a3", "Blend and Read", "Listen, blend the sounds, choose the word", "blend_read"),
+            ActivityInfo("m3a4", "Blending Match", "Match the picture to the blended word", "blending_match")
         )
     )
 
@@ -58,7 +59,7 @@ object Modules {
         title = "Consonant & Vowel Digraphs",
         icon = FarmIconKey.SPROUT_FLOWERING,
         activities = listOf(
-            ActivityInfo("m4a1", "Listen and Build", "Build a digraph word from letter tiles", "digraph_build"),
+            ActivityInfo("m4a1", "Digraph Sound", "Choose the digraph sound that matches the picture", "digraph_build"),
             ActivityInfo("m4a2", "Picture-to-Word Match", "Tap the picture, choose the spelling", "picture_word_match"),
             ActivityInfo("m4a3", "Digraph Hunt", "Find words with the target digraph", "digraph_hunt")
         )

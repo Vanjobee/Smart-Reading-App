@@ -65,10 +65,10 @@ object LettersBank {
     val patternWords: List<PatternWord> = listOf(
         PatternWord("chick", "CH", FarmIconKey.CHICK, image = R.drawable.chick),
         PatternWord("chicken", "CH", FarmIconKey.CHICKEN),
-        PatternWord("sheep", "SH", FarmIconKey.SHEEP),
+        PatternWord("sheep", "SH", FarmIconKey.SHEEP, image = R.drawable.sheep),
         PatternWord("shed", "SH", FarmIconKey.SHED),
         PatternWord("shovel", "SH", FarmIconKey.SHOVEL, image = R.drawable.shovel),
-        PatternWord("duck", "CK", FarmIconKey.DUCK),
+        PatternWord("duck", "CK", FarmIconKey.DUCK, image = R.drawable.duck),
         PatternWord("bee", "EE", FarmIconKey.BEE),
         PatternWord("seed", "EE", FarmIconKey.SEED),
         PatternWord("seeds", "EE", FarmIconKey.SEEDS),

@@ -1,4 +1,4 @@
-package com.sgbread.app.screens.module4
+package com.sgbread.app.screens.module3
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,8 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -34,11 +33,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.data.BlendWord
 import com.sgbread.app.data.LettersBank
-import com.sgbread.app.data.PatternWord
 import com.sgbread.app.data.Praise
 import com.sgbread.app.ui.components.ActivityCompleteOverlay
 import com.sgbread.app.ui.components.ActivityScaffold
@@ -54,68 +52,64 @@ import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.SoilBrown
 import kotlinx.coroutines.delay
 
-// Two-letter sound patterns used by Digraph Sound. Some extra word-family patterns are
-// included so the activity has 10 reliable rounds with both a picture and recorded word audio.
-private val DIGRAPH_PATTERNS = setOf("CH", "SH", "TH", "CK", "OW", "OR", "OG", "UT", "LK")
-private val DIGRAPH_SOUND_WORDS = listOf("chick", "sheep", "shovel", "duck", "cow", "moth", "corn", "dog", "nut", "milk")
-private val DIGRAPH_SOUND_EXCLUDED_WORDS = setOf("goat", "rice", "bee")
-private const val DIGRAPH_CHOICE_COUNT = 4
-
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
-    val rounds = remember {
-        LettersBank.patternWords
-            .filter { it.pattern in DIGRAPH_PATTERNS }
-            .filter { it.word in DIGRAPH_SOUND_WORDS }
-            .filter { it.word.lowercase() !in DIGRAPH_SOUND_EXCLUDED_WORDS }
-            .filter { it.image != null }
-            .distinctBy { it.word }
-            .sortedBy { DIGRAPH_SOUND_WORDS.indexOf(it.word) }
-    }
+fun BlendingMatchScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -> Unit) {
+    val rounds = remember { LettersBank.blendWords.shuffled().take(10) }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
-    var wrongPattern by remember { mutableStateOf<String?>(null) }
-    var correctPattern by remember { mutableStateOf<String?>(null) }
+    var wrongWord by remember { mutableStateOf<String?>(null) }
+    var correctWord by remember { mutableStateOf<String?>(null) }
     var roundLocked by remember { mutableStateOf(false) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
     val round = rounds[roundIndex]
-    val patternChoices = remember(roundIndex) {
-        val distractors = DIGRAPH_PATTERNS
-            .filter { it != round.pattern }
+    val choices = remember(roundIndex) {
+        val distractors = LettersBank.blendWords
+            .filter { it.word != round.word }
             .shuffled()
-            .take(DIGRAPH_CHOICE_COUNT - 1)
-        (distractors + round.pattern).shuffled()
+            .take(2)
+        (distractors + round).shuffled()
     }
 
-    fun speakPicture() = audio.playWord(round.word, rate = 0.9f)
+    fun speakPrompt() = audio.playWord(round.word, rate = 0.9f)
 
+    var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
-        wrongPattern = null
-        correctPattern = null
+        wrongWord = null
+        correctWord = null
         roundLocked = false
-        speakPicture()
+        if (!hasIntroduced) {
+            hasIntroduced = true
+            audio.playRecordedPrompt("Tap the matching word!") {
+                speakPrompt()
+            }
+            return@LaunchedEffect
+        }
+        speakPrompt()
     }
 
-    fun onPick(pattern: String) {
+    fun onPick(choice: BlendWord) {
         if (roundLocked) return
         audio.stopPlayback()
-        audio.playPatternSound(pattern)
-        if (pattern == round.pattern) {
-            correctPattern = pattern
+        if (choice.word == round.word) {
+            correctWord = choice.word
             roundLocked = true
-            pendingPraise = true
+            audio.playWord(choice.word, rate = 0.9f) {
+                pendingPraise = true
+            }
         } else {
-            wrongPattern = pattern
-            feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
+            wrongWord = choice.word
+            audio.playWord(choice.word, rate = 0.9f) {
+                audio.playSfx(Sfx.INCORRECT)
+                feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
+            }
         }
     }
 
     LaunchedEffect(pendingPraise) {
         if (pendingPraise) {
-            delay(600)
+            delay(250)
             audio.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
             pendingPraise = false
@@ -137,14 +131,14 @@ fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
         } else if (current is AnswerFeedback.Incorrect) {
             delay(750)
             feedback = AnswerFeedback.None
-            wrongPattern = null
+            wrongWord = null
         }
     }
 
     ActivityScaffold(
-        title = "Digraph Sound",
+        title = "Blending Match",
         onBack = onBack,
-        onReplayInstructions = { speakPicture() },
+        onReplayInstructions = { speakPrompt() },
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false
@@ -159,48 +153,51 @@ fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Round ${roundIndex + 1} of ${rounds.size}",
+                    "Word ${roundIndex + 1} of ${rounds.size}",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    "Tap the picture, then choose its digraph sound",
+                    "Look at the picture, then tap the matching word",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(bottom = metrics.spacing)
                 )
 
-                Column(
+                Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(metrics.spacing, Alignment.CenterVertically)
+                    contentAlignment = Alignment.Center
                 ) {
-                    DigraphPictureCard(
-                        word = round,
-                        imageSize = metrics.largePictureSize,
-                        onClick = {
-                            audio.stopPlayback()
-                            speakPicture()
-                        }
-                    )
-                    FlowRow(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(metrics.gridSpacing, Alignment.CenterHorizontally),
-                        verticalArrangement = Arrangement.spacedBy(metrics.gridSpacing)
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(metrics.spacing, Alignment.CenterVertically)
                     ) {
-                        patternChoices.forEach { pattern ->
-                            DigraphSoundChoice(
-                                pattern = pattern,
-                                state = when (pattern) {
-                                    correctPattern -> ChoiceState.CORRECT
-                                    wrongPattern -> ChoiceState.WRONG
-                                    else -> ChoiceState.IDLE
-                                },
-                                enabled = !roundLocked,
-                                onClick = { onPick(pattern) }
-                            )
+                        BlendingPictureCard(
+                            word = round,
+                            imageSize = metrics.largePictureSize,
+                            onClick = {
+                                audio.stopPlayback()
+                                speakPrompt()
+                            }
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(metrics.gridSpacing, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            choices.forEach { choice ->
+                                BlendingWordChoice(
+                                    word = choice.word,
+                                    state = choiceState(choice.word, correctWord, wrongWord),
+                                    enabled = !roundLocked,
+                                    onClick = { onPick(choice) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
                 }
@@ -213,21 +210,27 @@ fun DigraphBuildScreen(audio: AudioManager, onComplete: () -> Unit, onBack: () -
     }
 }
 
+private fun choiceState(word: String, correctWord: String?, wrongWord: String?): ChoiceState = when (word) {
+    correctWord -> ChoiceState.CORRECT
+    wrongWord -> ChoiceState.WRONG
+    else -> ChoiceState.IDLE
+}
+
 @Composable
-private fun DigraphPictureCard(
-    word: PatternWord,
+private fun BlendingPictureCard(
+    word: BlendWord,
     imageSize: androidx.compose.ui.unit.Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Box(
         modifier = modifier
-            .shadow(8.dp, RoundedCornerShape(30.dp))
-            .background(CreamWhite.copy(alpha = 0.96f), RoundedCornerShape(30.dp))
-            .border(4.dp, RiceGreenDark.copy(alpha = 0.7f), RoundedCornerShape(30.dp))
+            .shadow(8.dp, RoundedCornerShape(28.dp))
+            .background(CreamWhite.copy(alpha = 0.96f), RoundedCornerShape(28.dp))
+            .border(4.dp, RiceGreenDark.copy(alpha = 0.7f), RoundedCornerShape(28.dp))
             .clickable(onClick = onClick)
-            .padding(18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(14.dp),
+        contentAlignment = Alignment.Center
     ) {
         if (word.image != null) {
             Image(
@@ -239,19 +242,12 @@ private fun DigraphPictureCard(
         } else if (word.icon != null) {
             FarmIcon(word.icon, modifier = Modifier.size(imageSize), background = null)
         }
-        Text(
-            word.word,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = SoilBrown,
-            modifier = Modifier.padding(top = 8.dp)
-        )
     }
 }
 
 @Composable
-private fun DigraphSoundChoice(
-    pattern: String,
+private fun BlendingWordChoice(
+    word: String,
     state: ChoiceState,
     enabled: Boolean,
     onClick: () -> Unit,
@@ -271,16 +267,16 @@ private fun DigraphSoundChoice(
     }
     Box(
         modifier = modifier
-            .size(92.dp)
-            .shadow(if (state == ChoiceState.IDLE) 4.dp else 8.dp, RoundedCornerShape(22.dp))
-            .background(backgroundColor, RoundedCornerShape(22.dp))
-            .border(3.dp, borderColor, RoundedCornerShape(22.dp))
-            .clickable(enabled = enabled, onClick = onClick),
+            .shadow(if (state == ChoiceState.IDLE) 4.dp else 8.dp, RoundedCornerShape(18.dp))
+            .background(backgroundColor, RoundedCornerShape(18.dp))
+            .border(3.dp, borderColor, RoundedCornerShape(18.dp))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            pattern,
-            fontSize = 34.sp,
+            word,
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold,
             color = SoilBrown,
             textAlign = TextAlign.Center
@@ -290,9 +286,9 @@ private fun DigraphSoundChoice(
 
 @Preview(device = "spec:width=360dp,height=800dp,orientation=portrait", showBackground = true)
 @Composable
-private fun DigraphBuildScreenPreview() {
+private fun BlendingMatchScreenPreview() {
     SgbReadTheme {
-        DigraphBuildScreen(
+        BlendingMatchScreen(
             audio = AudioManager.getInstance(LocalContext.current),
             onComplete = {},
             onBack = {}

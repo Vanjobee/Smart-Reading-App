@@ -17,6 +17,7 @@ import com.sgbread.app.screens.module1.TraceLetterScreen
 import com.sgbread.app.screens.module2.ListenMatchScreen
 import com.sgbread.app.screens.module2.LetterHuntScreen
 import com.sgbread.app.screens.module2.TapLetterScreen
+import com.sgbread.app.screens.module3.BlendingMatchScreen
 import com.sgbread.app.screens.module3.BlendReadScreen
 import com.sgbread.app.screens.module3.MissingLetterScreen
 import com.sgbread.app.screens.module4.DigraphBuildScreen
@@ -93,6 +94,9 @@ fun SgbNavGraph(
         }
         composable("blend_read") {
             BlendReadScreen(audio, onComplete = { progressViewModel.completeActivity("m3a3"); navController.popBackStack() }, onBack = { navController.popBackStack() })
+        }
+        composable("blending_match") {
+            BlendingMatchScreen(audio, onComplete = { progressViewModel.completeActivity("m3a4"); navController.popBackStack() }, onBack = { navController.popBackStack() })
         }
 
         // Module 4: Digraphs
