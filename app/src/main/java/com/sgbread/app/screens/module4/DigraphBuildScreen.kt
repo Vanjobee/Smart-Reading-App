@@ -106,11 +106,11 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
 
     fun onPick(pattern: String) {
         if (roundLocked) return
+        roundLocked = true
         audio?.stopPlayback()
         audio?.playPatternSound(pattern)
         if (pattern == round.pattern) {
             correctPattern = pattern
-            roundLocked = true
             pendingPraise = true
         } else {
             wrongPattern = pattern
@@ -143,6 +143,7 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
             delay(750)
             feedback = AnswerFeedback.None
             wrongPattern = null
+            roundLocked = false
         }
     }
 

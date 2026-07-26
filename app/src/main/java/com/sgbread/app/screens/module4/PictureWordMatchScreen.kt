@@ -72,6 +72,8 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongWord by remember { mutableStateOf<String?>(null) }
+    var correctWord by remember { mutableStateOf<String?>(null) }
+    var roundLocked by remember { mutableStateOf(false) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
@@ -86,6 +88,8 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
         wrongWord = null
+        correctWord = null
+        roundLocked = false
         if (!hasIntroduced) {
             hasIntroduced = true
             audio?.playRecordedPrompt("Tap the picture!") {
@@ -97,10 +101,17 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
     }
 
     fun onPick(word: String) {
+        if (roundLocked) return
+        roundLocked = true
         audio?.stopPlayback()
         if (word == round.word) {
-            audio?.playWord(round.word, rate = 0.9f) {
+            correctWord = word
+            if (audio == null) {
                 pendingPraise = true
+            } else {
+                audio.playWord(round.word, rate = 0.9f) {
+                    pendingPraise = true
+                }
             }
         } else {
             audio?.playSfx(Sfx.INCORRECT)
@@ -134,6 +145,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
             delay(750)
             feedback = AnswerFeedback.None
             wrongWord = null
+            roundLocked = false
         }
     }
 
@@ -228,9 +240,10 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
                                     word = word,
                                     state = when {
                                         wrongWord == word -> ChoiceState.WRONG
-                                        word == round.word && feedback is AnswerFeedback.Correct -> ChoiceState.CORRECT
+                                        correctWord == word -> ChoiceState.CORRECT
                                         else -> ChoiceState.IDLE
                                     },
+                                    enabled = !roundLocked,
                                     onClick = { onPick(word) },
                                     modifier = Modifier.weight(1f)
                                 )
@@ -251,6 +264,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
 private fun SpellingChoiceBox(
     word: String,
     state: ChoiceState,
+    enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -264,7 +278,7 @@ private fun SpellingChoiceBox(
         modifier = modifier
             .background(CreamWhite, RoundedCornerShape(10.dp))
             .border(3.dp, borderColor, RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 16.dp),
         contentAlignment = Alignment.Center
     ) {

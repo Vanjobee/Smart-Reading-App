@@ -1,6 +1,12 @@
 package com.sgbread.app.screens.module2
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -9,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,8 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -52,6 +61,7 @@ private data class HuntCell(val letter: Char, val isTarget: Boolean, var found: 
 private const val ON_SCREEN_COUNT = 20
 private const val TARGET_COUNT = 8
 private const val M2_SCALE = 0.86f
+private const val INTRO_IMAGE_HOLD_AFTER_AUDIO_MS = 450L
 private val PHONICS_HUNT_EXCLUDED_WORDS = setOf("goat", "rice")
 
 private fun buildLetters(target: Char): List<HuntCell> {
@@ -126,6 +136,10 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
+    var introImageVisible by remember { mutableStateOf(true) }
+    var introAudioFinished by remember { mutableStateOf(false) }
+    var inputLocked by remember { mutableStateOf(true) }
+    var wrongCellIndex by remember { mutableStateOf<Int?>(null) }
 
     val round = huntRounds[roundIndex]
     val target = round.letter
@@ -133,28 +147,44 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
     val foundCount = letters.count { it.isTarget && it.found }
 
     // Phonics sound then the word, in sequence, so the child hunts by sound rather than by name.
-    fun speakPrompt() = audio?.speakLetterThenWord(target, round.word, rate = 0.9f)
+    fun speakPrompt(onComplete: (() -> Unit)? = null) =
+        audio?.speakLetterThenWord(target, round.word, rate = 0.9f, onComplete = onComplete)
 
     var hasIntroduced by remember { mutableStateOf(false) }
     LaunchedEffect(roundIndex) {
+        introImageVisible = true
+        introAudioFinished = false
+        inputLocked = true
+        wrongCellIndex = null
         if (!hasIntroduced) {
             hasIntroduced = true
             audio?.playRecordedPrompt("Lets search the letter in the farm!") {
-                speakPrompt()
+                speakPrompt { introAudioFinished = true }
             }
             return@LaunchedEffect
         }
-        speakPrompt()
+        speakPrompt { introAudioFinished = true }
+    }
+
+    LaunchedEffect(introAudioFinished) {
+        if (introAudioFinished) {
+            delay(INTRO_IMAGE_HOLD_AFTER_AUDIO_MS)
+            introImageVisible = false
+            introAudioFinished = false
+            inputLocked = false
+        }
     }
 
     fun onCellTap(index: Int) {
         val cell = letters[index]
-        if (cell.found) return
+        if (inputLocked || cell.found) return
         audio?.stopPlayback()
         if (cell.isTarget) {
+            wrongCellIndex = null
             audio?.playSfx(Sfx.CORRECT)
             letters = letters.toMutableList().also { it[index] = it[index].copy(found = true) }
             if (foundCount + 1 == TARGET_COUNT) {
+                inputLocked = true
                 audio?.speakLetterThenWord(target, round.word) {
                     pendingPraise = true
                 }
@@ -162,7 +192,11 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
                 audio?.playLetterSound(cell.letter)
             }
         } else {
+            inputLocked = true
+            wrongCellIndex = index
+            audio?.playSfx(Sfx.INCORRECT)
             audio?.playLetterSound(cell.letter)
+            feedback = AnswerFeedback.Incorrect(Praise.randomEncouragement())
         }
     }
 
@@ -186,6 +220,11 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
             } else {
                 roundIndex += 1
             }
+        } else if (feedback is AnswerFeedback.Incorrect) {
+            delay(750)
+            feedback = AnswerFeedback.None
+            wrongCellIndex = null
+            inputLocked = false
         }
     }
 
@@ -274,10 +313,51 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
                         LetterChip(
                             letter = cell.letter,
                             size = chipSize,
-                            state = if (cell.found) ChoiceState.CORRECT else ChoiceState.IDLE,
-                            enabled = !cell.found,
+                            state = when {
+                                cell.found -> ChoiceState.CORRECT
+                                wrongCellIndex == i -> ChoiceState.WRONG
+                                else -> ChoiceState.IDLE
+                            },
+                            enabled = !inputLocked && !cell.found,
                             onClick = { onCellTap(i) },
                             modifier = Modifier.offset(x = offsetX, y = offsetY)
+                        )
+                    }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = introImageVisible,
+                enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy)),
+                exit = scaleOut(),
+                modifier = Modifier.matchParentSize()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0x99000000)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .background(CreamWhite, RoundedCornerShape(28.dp))
+                            .padding(if (metrics.compactHeight) 20.dp else 28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(round.image),
+                            contentDescription = round.word,
+                            modifier = Modifier.size(
+                                metrics.largePictureSize *
+                                    responsiveTextScale.coerceAtMost(1.15f)
+                            ),
+                            contentScale = ContentScale.Fit
+                        )
+                        Text(
+                            "\"$targetLabel\" is for \"${round.word}\"",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = metrics.gridSpacing)
                         )
                     }
                 }
