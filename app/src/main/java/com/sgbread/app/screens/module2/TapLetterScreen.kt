@@ -184,7 +184,7 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                     }
                 )
                 Text(
-                    "What letter does this start with?",
+                    "Click the first Letter of this Picture",
                     style = MaterialTheme.typography.headlineSmall.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,

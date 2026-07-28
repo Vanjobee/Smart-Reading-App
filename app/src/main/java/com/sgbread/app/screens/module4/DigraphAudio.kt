@@ -2,6 +2,7 @@ package com.sgbread.app.screens.module4
 
 import com.sgbread.app.R
 import com.sgbread.app.audio.AudioManager
+import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.PatternWord
 
 private val DIGRAPH_SOUND_AUDIO = mapOf(
@@ -32,6 +33,11 @@ internal fun AudioManager?.playDigraphSound(pattern: String) {
     if (audio != null) {
         this?.playRawResource(audio, "digraph-sound:$normalized")
     } else {
-        this?.playPatternSound(normalized)
+        val sample = LettersBank.patternWords.firstOrNull { it.pattern == normalized && it.audio != null }
+        if (sample != null) {
+            playPatternWord(sample, rate = 0.9f)
+        } else {
+            this?.playPatternSound(normalized)
+        }
     }
 }

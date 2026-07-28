@@ -276,7 +276,7 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
                     }
                 )
                 Text(
-                    "Find every \"$targetLabel\" sound ($foundCount / $TARGET_COUNT)",
+                    "Find all the /${target.lowercaseChar()}/ sounds ($foundCount / $TARGET_COUNT)",
                     style = (
                         if (metrics.compactHeight) {
                             MaterialTheme.typography.titleLarge

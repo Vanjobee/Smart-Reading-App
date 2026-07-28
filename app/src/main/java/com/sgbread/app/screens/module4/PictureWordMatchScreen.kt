@@ -65,7 +65,6 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
             .filter { it.image != null && it.audio != null }
             .distinctBy { it.word }
             .shuffled()
-            .take(10)
     }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
@@ -186,7 +185,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
                     }
                 )
                 Text(
-                    "Tap the picture to hear it, then pick the spelling",
+                    "Look at the picture, then tap the matching word.",
                     style = MaterialTheme.typography.titleLarge.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,

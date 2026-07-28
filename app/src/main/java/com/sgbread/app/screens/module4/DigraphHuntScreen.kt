@@ -115,7 +115,7 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
 
     // Only words with real image assets are used here because this activity's choices
     // are picture cards, not text/digraph cards.
-    val huntRounds = remember { huntWords.filter { it.image != null }.shuffled().take(10) }
+    val huntRounds = remember { huntWords.filter { it.image != null }.shuffled() }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongWord by remember { mutableStateOf<String?>(null) }
@@ -216,6 +216,18 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                         )
                     }
                 )
+                Text(
+                    "Find the picture you hear",
+                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 @Composable
                 fun QuestionPane() {
@@ -243,18 +255,6 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                                 textAlign = TextAlign.Center
                             )
                         }
-                        Text(
-                            "Find the picture for \"${target.word}\"",
-                            style = MaterialTheme.typography.titleLarge.let { baseStyle ->
-                                baseStyle.copy(
-                                    color = CreamWhite,
-                                    fontSize = baseStyle.fontSize * responsiveTextScale
-                                )
-                            },
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
                     }
                 }
 

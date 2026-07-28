@@ -81,29 +81,20 @@ object LettersBank {
     )
 
     val patternWords: List<PatternWord> = listOf(
-        PatternWord("shell", "SH", image = R.drawable.digraph_shell, audio = R.raw.digraph_shell),
-        PatternWord("shirt", "SH", image = R.drawable.digraph_shirt, audio = R.raw.digraph_shirt),
-        PatternWord("shed", "SH", image = R.drawable.digraph_shed, audio = R.raw.digraph_shed),
+        PatternWord("chicken", "CH", image = R.drawable.digraph_chicken, audio = R.raw.digraph_chicken),
         PatternWord("fish", "SH", image = R.drawable.digraph_fish, audio = R.raw.digraph_fish),
-        PatternWord("wash", "SH", image = R.drawable.digraph_wash, audio = R.raw.digraph_wash),
-        PatternWord("trash", "SH", image = R.drawable.digraph_trash, audio = R.raw.digraph_trash),
-        PatternWord("chick", "CH", image = R.drawable.digraph_chick, audio = R.raw.digraph_chick),
-        PatternWord("chat", "CH", image = R.drawable.digraph_chat, audio = R.raw.digraph_chat),
-        PatternWord("chin", "CH", image = R.drawable.digraph_chin, audio = R.raw.digraph_chin),
-        PatternWord("chair", "CH", image = R.drawable.digraph_chair, audio = R.raw.digraph_chair),
-        PatternWord("lick", "CK", image = R.drawable.digraph_lick, audio = R.raw.digraph_lick),
-        PatternWord("rock", "CK", image = R.drawable.digraph_rock, audio = R.raw.digraph_rock),
-        PatternWord("lock", "CK", image = R.drawable.digraph_lock, audio = R.raw.digraph_lock),
-        PatternWord("pick", "CK", image = R.drawable.digraph_pick, audio = R.raw.digraph_pick),
-        PatternWord("sack", "CK", image = R.drawable.digraph_sack, audio = R.raw.digraph_sack),
-        PatternWord("ring", "NG", image = R.drawable.digraph_ring, audio = R.raw.digraph_ring),
-        PatternWord("king", "NG", image = R.drawable.digraph_king, audio = R.raw.digraph_king),
-        PatternWord("wing", "NG", image = R.drawable.digraph_wing, audio = R.raw.digraph_wing),
-        PatternWord("sing", "NG", image = R.drawable.digraph_sing, audio = R.raw.digraph_sing),
-        PatternWord("phone", "PH", image = R.drawable.digraph_phone, audio = R.raw.digraph_phone),
+        PatternWord("lunch", "CH", image = R.drawable.digraph_lunch, audio = R.raw.digraph_lunch),
         PatternWord("photo", "PH", image = R.drawable.digraph_photo, audio = R.raw.digraph_photo),
-        PatternWord("graph", "PH", image = R.drawable.digraph_graph, audio = R.raw.digraph_graph),
-        PatternWord("bath", "TH", image = R.drawable.digraph_bath, audio = R.raw.digraph_bath),
-        PatternWord("cloth", "TH", image = R.drawable.digraph_cloth, audio = R.raw.digraph_cloth)
+        PatternWord("wheel", "WH", image = R.drawable.digraph_wheel, audio = R.raw.digraph_wheel),
+        PatternWord("duck", "CK", image = R.drawable.digraph_duck, audio = R.raw.digraph_duck),
+        PatternWord("sing", "NG", image = R.drawable.digraph_sing, audio = R.raw.digraph_sing),
+        PatternWord("ring", "NG", image = R.drawable.digraph_ring, audio = R.raw.digraph_ring),
+        PatternWord("chain", "CH", image = R.drawable.digraph_chain, audio = R.raw.digraph_chain),
+        PatternWord("thumb", "TH", image = R.drawable.digraph_thumb, audio = R.raw.digraph_thumb),
+        PatternWord("shell", "SH", image = R.drawable.digraph_shell, audio = R.raw.digraph_shell),
+        PatternWord("rock", "CK", image = R.drawable.digraph_rock, audio = R.raw.digraph_rock),
+        PatternWord("sack", "CK", image = R.drawable.digraph_sack, audio = R.raw.digraph_sack),
+        PatternWord("lick", "CK", image = R.drawable.digraph_lick, audio = R.raw.digraph_lick),
+        PatternWord("king", "NG", image = R.drawable.digraph_king, audio = R.raw.digraph_king)
     )
 }

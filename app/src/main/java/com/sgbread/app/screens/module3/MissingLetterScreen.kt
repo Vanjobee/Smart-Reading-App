@@ -180,7 +180,21 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                             fontSize = baseStyle.fontSize * responsiveTextScale
                         )
                     },
-                    modifier = Modifier.padding(bottom = metrics.spacing)
+                    modifier = Modifier.padding(bottom = metrics.gridSpacing)
+                )
+                Text(
+                    "Place the letter in the box to complete the word.",
+                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                        baseStyle.copy(
+                            color = CreamWhite,
+                            fontSize = baseStyle.fontSize * responsiveTextScale
+                        )
+                    },
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = metrics.spacing)
                 )
 
                 // Wraps both panes so a letter can be dragged from the choices (right)
@@ -293,20 +307,6 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                             }
                         },
                         choices = {
-                            Text(
-                                "Drag the missing beginning or ending letter",
-                                style = MaterialTheme.typography.titleLarge.let { baseStyle ->
-                                    baseStyle.copy(
-                                        color = CreamWhite,
-                                        fontSize = baseStyle.fontSize * responsiveTextScale
-                                    )
-                                },
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = metrics.spacing)
-                            )
                             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                                 val rowSpacing = metrics.gridSpacing
                                 val maxChoiceSize = ((maxWidth - rowSpacing * (CHOICE_COUNT - 1)) / CHOICE_COUNT)

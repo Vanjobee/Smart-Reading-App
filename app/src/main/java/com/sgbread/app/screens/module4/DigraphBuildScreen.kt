@@ -55,7 +55,7 @@ import com.sgbread.app.ui.theme.SgbReadTheme
 import com.sgbread.app.ui.theme.SoilBrown
 import kotlinx.coroutines.delay
 
-private val DIGRAPH_PATTERNS = setOf("CH", "SH", "TH", "CK", "NG", "PH")
+private val DIGRAPH_PATTERNS = setOf("CH", "SH", "TH", "CK", "NG", "PH", "WH")
 private const val DIGRAPH_CHOICE_COUNT = 4
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -71,7 +71,6 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
             .filter { it.image != null && it.audio != null }
             .distinctBy { it.word }
             .shuffled()
-            .take(10)
     }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }

@@ -171,7 +171,7 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                     }
                 )
                 Text(
-                    "Tap each letter sound, blend the word, then choose the picture",
+                    "Tap each letter sound, blend the word, then choose the correct picture",
                     style = MaterialTheme.typography.titleLarge.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
