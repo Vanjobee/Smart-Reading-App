@@ -7,7 +7,7 @@ val ALPHABET: List<Char> = ('A'..'Z').toList()
 /** One letter paired with a picture word that starts with its sound, for the Phonics module. */
 data class PhonicsItem(val letter: Char, val word: String, val image: Int)
 
-/** A three-letter word used for the blending module, with its picture and recorded word audio.
+/** A word used for the blending module, with its picture and recorded word audio.
  * [image] is a real photo (preferred when present); [icon] is the vector fallback. */
 data class BlendWord(val word: String, val icon: FarmIconKey? = null, val image: Int? = null, val audio: Int? = null)
 
@@ -30,54 +30,58 @@ object LettersBank {
         PhonicsItem('C', "cat", R.drawable.phonics_cat),
         PhonicsItem('D', "dig", R.drawable.phonics_dig),
         PhonicsItem('E', "egg", R.drawable.egg),
-        PhonicsItem('F', "frog", R.drawable.frog),
+        PhonicsItem('F', "fish", R.drawable.phonics_fish),
         PhonicsItem('G', "goat", R.drawable.goat),
         PhonicsItem('H', "hen", R.drawable.hen),
         PhonicsItem('I', "ink", R.drawable.phonics_ink),
-        PhonicsItem('J', "juice", R.drawable.juice),
-        PhonicsItem('K', "kite", R.drawable.kite),
+        PhonicsItem('J', "jam", R.drawable.phonics_jam),
+        PhonicsItem('K', "kiwi", R.drawable.phonics_kiwi),
         PhonicsItem('L', "log", R.drawable.phonics_log),
         PhonicsItem('M', "mud", R.drawable.phonics_mud),
         PhonicsItem('N', "nest", R.drawable.nest),
-        PhonicsItem('O', "owl", R.drawable.phonics_owl),
+        PhonicsItem('O', "oval", R.drawable.phonics_oval),
         PhonicsItem('P', "pig", R.drawable.pig),
-        PhonicsItem('Q', "quail", R.drawable.quail),
-        PhonicsItem('R', "rice", R.drawable.rice),
+        PhonicsItem('Q', "queen", R.drawable.phonics_queen),
+        PhonicsItem('R', "red", R.drawable.phonics_red),
         PhonicsItem('S', "sun", R.drawable.phonics_sun),
         PhonicsItem('T', "tree", R.drawable.tree),
-        PhonicsItem('U', "up", R.drawable.phonics_up),
+        PhonicsItem('U', "utensils", R.drawable.phonics_utensils),
         PhonicsItem('V', "van", R.drawable.phonics_van),
-        PhonicsItem('W', "watermelon", R.drawable.watermelon),
-        PhonicsItem('X', "xylophone", R.drawable.xylophone),
+        PhonicsItem('W', "wheel", R.drawable.phonics_wheel),
+        PhonicsItem('X', "xray", R.drawable.phonics_xray),
         PhonicsItem('Y', "yoyo", R.drawable.yo_yo),
         PhonicsItem('Z', "zebra", R.drawable.zebra)
     )
 
     val blendWords: List<BlendWord> = listOf(
-        BlendWord("bag", image = R.drawable.blend_bag, audio = R.raw.blend_bag),
-        BlendWord("bat", image = R.drawable.blend_bat, audio = R.raw.blend_bat),
+        BlendWord("pigpen", image = R.drawable.blend_pigpen, audio = R.raw.blend_pigpen),
+        BlendWord("barn", image = R.drawable.blend_barn, audio = R.raw.blend_barn),
+        BlendWord("bee", image = R.drawable.blend_bee, audio = R.raw.blend_bee),
+        BlendWord("bird", image = R.drawable.blend_bird, audio = R.raw.blend_bird),
+        BlendWord("pig", image = R.drawable.blend_pig, audio = R.raw.blend_pig),
+        BlendWord("plant", image = R.drawable.blend_plant, audio = R.raw.blend_plant),
+        BlendWord("potato", image = R.drawable.blend_potato, audio = R.raw.blend_potato),
+        BlendWord("seed", image = R.drawable.blend_seed, audio = R.raw.blend_seed),
+        BlendWord("sugar", image = R.drawable.blend_sugar, audio = R.raw.blend_sugar),
+        BlendWord("corn", image = R.drawable.blend_corn, audio = R.raw.blend_corn),
         BlendWord("cat", image = R.drawable.blend_cat, audio = R.raw.blend_cat),
-        BlendWord("can", image = R.drawable.blend_can, audio = R.raw.blend_can),
-        BlendWord("cap", image = R.drawable.blend_cap, audio = R.raw.blend_cap),
-        BlendWord("fan", image = R.drawable.blend_fan, audio = R.raw.blend_fan),
-        BlendWord("hat", image = R.drawable.blend_hat, audio = R.raw.blend_hat),
-        BlendWord("van", image = R.drawable.blend_van, audio = R.raw.blend_van),
-        BlendWord("bed", image = R.drawable.blend_bed, audio = R.raw.blend_bed),
+        BlendWord("bat", image = R.drawable.blend_bat, audio = R.raw.blend_bat),
         BlendWord("leg", image = R.drawable.blend_leg, audio = R.raw.blend_leg),
-        BlendWord("pen", image = R.drawable.blend_pen, audio = R.raw.blend_pen),
-        BlendWord("red", image = R.drawable.blend_red, audio = R.raw.blend_red),
-        BlendWord("web", image = R.drawable.blend_web, audio = R.raw.blend_web),
-        BlendWord("dig", image = R.drawable.blend_dig, audio = R.raw.blend_dig),
-        BlendWord("pin", image = R.drawable.blend_pin, audio = R.raw.blend_pin),
-        BlendWord("sit", image = R.drawable.blend_sit, audio = R.raw.blend_sit),
-        BlendWord("wig", image = R.drawable.blend_wig, audio = R.raw.blend_wig),
-        BlendWord("mop", image = R.drawable.blend_mop, audio = R.raw.blend_mop),
-        BlendWord("pot", image = R.drawable.blend_pot, audio = R.raw.blend_pot),
-        BlendWord("bug", image = R.drawable.blend_bug, audio = R.raw.blend_bug),
         BlendWord("bus", image = R.drawable.blend_bus, audio = R.raw.blend_bus),
         BlendWord("hut", image = R.drawable.blend_hut, audio = R.raw.blend_hut),
-        BlendWord("run", image = R.drawable.blend_run, audio = R.raw.blend_run),
-        BlendWord("ube", image = R.drawable.blend_ube, audio = R.raw.blend_ube)
+        BlendWord("nut", image = R.drawable.blend_nut, audio = R.raw.blend_nut),
+        BlendWord("bed", image = R.drawable.blend_bed, audio = R.raw.blend_bed),
+        BlendWord("bug", image = R.drawable.blend_bug, audio = R.raw.blend_bug),
+        BlendWord("dig", image = R.drawable.blend_dig, audio = R.raw.blend_dig),
+        BlendWord("web", image = R.drawable.blend_web, audio = R.raw.blend_web),
+        BlendWord("van", image = R.drawable.blend_van, audio = R.raw.blend_van),
+        BlendWord("sit", image = R.drawable.blend_sit, audio = R.raw.blend_sit),
+        BlendWord("hat", image = R.drawable.blend_hat, audio = R.raw.blend_hat),
+        BlendWord("red", image = R.drawable.blend_red, audio = R.raw.blend_red),
+        BlendWord("jam", image = R.drawable.blend_jam, audio = R.raw.blend_jam),
+        BlendWord("oval", image = R.drawable.blend_oval, audio = R.raw.blend_oval),
+        BlendWord("kiwi", image = R.drawable.blend_kiwi, audio = R.raw.blend_kiwi),
+        BlendWord("ant", image = R.drawable.blend_ant, audio = R.raw.blend_ant)
     )
 
     val patternWords: List<PatternWord> = listOf(

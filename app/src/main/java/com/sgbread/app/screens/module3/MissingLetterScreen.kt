@@ -69,7 +69,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
     val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
 
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val rounds = remember { LettersBank.blendWords.filter { it.word.length == 3 }.shuffled().take(10) }
+    val rounds = remember { LettersBank.blendWords.shuffled() }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongLetter by remember { mutableStateOf<Char?>(null) }

@@ -52,8 +52,8 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
 
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val blendItems = remember { LettersBank.blendWords.filter { it.word.length == 3 } }
-    val rounds = remember { blendItems.shuffled().take(10) }
+    val blendItems = remember { LettersBank.blendWords }
+    val rounds = remember { blendItems.shuffled() }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongWord by remember { mutableStateOf<String?>(null) }

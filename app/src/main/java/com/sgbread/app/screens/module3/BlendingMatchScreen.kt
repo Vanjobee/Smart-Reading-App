@@ -59,10 +59,8 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
     val screenWidthDp = LocalConfiguration.current.screenWidthDp
     val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
 
-    val matchWords = remember {
-        LettersBank.blendWords.filter { it.word.length == 3 }
-    }
-    val rounds = remember { matchWords.shuffled().take(10) }
+    val matchWords = remember { LettersBank.blendWords }
+    val rounds = remember { matchWords.shuffled() }
     var roundIndex by remember { mutableStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongWord by remember { mutableStateOf<String?>(null) }
