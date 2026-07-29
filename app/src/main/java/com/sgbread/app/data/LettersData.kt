@@ -93,7 +93,7 @@ object LettersBank {
         PatternWord("duck", "CK", image = R.drawable.digraph_duck, audio = R.raw.digraph_duck),
         PatternWord("sing", "NG", image = R.drawable.digraph_sing, audio = R.raw.digraph_sing),
         PatternWord("ring", "NG", image = R.drawable.digraph_ring, audio = R.raw.digraph_ring),
-        PatternWord("chain", "CH", image = R.drawable.digraph_chain, audio = R.raw.digraph_chain),
+        PatternWord("chair", "CH", image = R.drawable.digraph_chair, audio = R.raw.digraph_chair),
         PatternWord("thumb", "TH", image = R.drawable.digraph_thumb, audio = R.raw.digraph_thumb),
         PatternWord("shell", "SH", image = R.drawable.digraph_shell, audio = R.raw.digraph_shell),
         PatternWord("rock", "CK", image = R.drawable.digraph_rock, audio = R.raw.digraph_rock),
