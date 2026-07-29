@@ -65,6 +65,7 @@ fun ActivityScaffold(
     audio: AudioManager? = null,
     playFeedbackAudio: Boolean = true,
     blockInputDuringAudio: Boolean = true,
+    replayInstructionsEnabled: Boolean = true,
     titleTextScale: Float = 1f,
     confirmOnBack: Boolean = false,
     content: @Composable (PaddingValues) -> Unit
@@ -145,12 +146,17 @@ fun ActivityScaffold(
                     actions = {
                         if (onReplayInstructions != null) {
                             IconButton(
+                                enabled = replayInstructionsEnabled,
                                 onClick = {
                                     audio?.stopPlayback()
                                     onReplayInstructions()
                                 }
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = "Hear instructions", tint = TextBrown)
+                                Icon(
+                                    Icons.AutoMirrored.Filled.VolumeUp,
+                                    contentDescription = "Hear instructions",
+                                    tint = TextBrown.copy(alpha = if (replayInstructionsEnabled) 1f else 0.36f)
+                                )
                             }
                         }
                     },

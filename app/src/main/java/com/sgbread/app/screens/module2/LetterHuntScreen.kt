@@ -34,10 +34,13 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.ALPHABET
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.Praise
@@ -158,7 +161,7 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
         wrongCellIndex = null
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio?.playRecordedPrompt("Lets search the letter in the farm!") {
+            audio.playActivityInstruction(ActivityInstruction.PHONICS_HUNT) {
                 speakPrompt { introAudioFinished = true }
             }
             return@LaunchedEffect
@@ -235,6 +238,7 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !introImageVisible,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || foundCount > 0
     ) { padding ->
@@ -276,21 +280,18 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
                     }
                 )
                 Text(
-                    "Find all the /${target.lowercaseChar()}/ sounds ($foundCount / $TARGET_COUNT)",
-                    style = (
-                        if (metrics.compactHeight) {
-                            MaterialTheme.typography.titleLarge
-                        } else {
-                            MaterialTheme.typography.headlineMedium
-                        }
-                    ).let { baseStyle ->
+                    "Click the 🔊 speaker icon in the upper right corner of your gadget. Listen to the sound. Click the matching letter. ($foundCount / $TARGET_COUNT)",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale
                         )
                     },
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = if (metrics.compactHeight) 2.dp else metrics.spacing)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = if (metrics.compactHeight) 2.dp else metrics.spacing)
                 )
                 BoxWithConstraints(
                     modifier = Modifier

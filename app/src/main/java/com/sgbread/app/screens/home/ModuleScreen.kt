@@ -42,9 +42,9 @@ private val MODE_1_HOTSPOTS = listOf(
 )
 
 private val MODE_2_HOTSPOTS = listOf(
-    ArtworkHotspot("listen_match", "Open Phonics Match", 145f, 830f, 795f, 1065f),
-    ArtworkHotspot("tap_letter", "Open Tap Letter", 145f, 1065f, 795f, 1300f),
-    ArtworkHotspot("letter_hunt", "Open Letter Hunt", 145f, 1300f, 795f, 1540f)
+    ArtworkHotspot("listen_match", "Open Phonics Sounds", 145f, 830f, 795f, 1065f),
+    ArtworkHotspot("tap_letter", "Open Phonics Match", 145f, 1065f, 795f, 1300f),
+    ArtworkHotspot("letter_hunt", "Open Phonics Hunt", 145f, 1300f, 795f, 1540f)
 )
 
 private val MODE_3_HOTSPOTS = listOf(
@@ -55,7 +55,7 @@ private val MODE_3_HOTSPOTS = listOf(
 
 private val MODE_4_HOTSPOTS = listOf(
     ArtworkHotspot("digraph_build", "Open Digraph Sound", 145f, 830f, 795f, 1065f),
-    ArtworkHotspot("picture_word_match", "Open Picture-to-Word Match", 145f, 1065f, 795f, 1300f),
+    ArtworkHotspot("picture_word_match", "Open Digraph Match", 145f, 1065f, 795f, 1300f),
     ArtworkHotspot("digraph_hunt", "Open Digraph Hunt", 145f, 1300f, 795f, 1540f)
 )
 

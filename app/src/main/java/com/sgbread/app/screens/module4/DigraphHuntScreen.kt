@@ -38,8 +38,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.Praise
 import com.sgbread.app.ui.components.ActivityCompleteOverlay
@@ -122,6 +124,7 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
     var inputLocked by remember { mutableStateOf(false) }
+    var hasIntroduced by remember { mutableStateOf(false) }
     val draggedOffsets = remember(roundIndex) { mutableStateMapOf<String, Offset>() }
     var draggingWord by remember(roundIndex) { mutableStateOf<String?>(null) }
 
@@ -138,6 +141,13 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
     LaunchedEffect(roundIndex) {
         wrongWord = null
         inputLocked = false
+        if (!hasIntroduced) {
+            hasIntroduced = true
+            audio.playActivityInstruction(ActivityInstruction.DIGRAPH_HUNT) {
+                speakPrompt()
+            }
+            return@LaunchedEffect
+        }
         speakPrompt()
     }
 
@@ -192,7 +202,11 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
     ActivityScaffold(
         title = "Digraph Hunt",
         onBack = onBack,
-        onReplayInstructions = { speakPrompt() },
+        onReplayInstructions = {
+            audio.playActivityInstruction(ActivityInstruction.DIGRAPH_HUNT) {
+                speakPrompt()
+            }
+        },
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
@@ -217,8 +231,8 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                     }
                 )
                 Text(
-                    "Find the picture you hear",
-                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                    "Click and listen to the word with a digraph sound. Match the digraph sound. Click the picture.",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale
@@ -311,7 +325,10 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                                     .pointerInput(roundIndex, w.word, widthPx, heightPx, cardPx, inputLocked) {
                                         detectDragGestures(
                                             onDragStart = {
-                                                if (!inputLocked) draggingWord = w.word
+                                                if (!inputLocked) {
+                                                    audio?.stopPlayback()
+                                                    draggingWord = w.word
+                                                }
                                             },
                                             onDrag = { change, dragAmount ->
                                                 if (inputLocked || draggingWord != w.word) {

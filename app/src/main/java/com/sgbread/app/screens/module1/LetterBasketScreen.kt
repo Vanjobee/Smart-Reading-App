@@ -42,14 +42,17 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.PhonicsItem
 import com.sgbread.app.ui.components.ActivityCompleteOverlay
@@ -193,10 +196,7 @@ fun LetterBasketScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
         isHoveringBasket = false
     }
 
-    fun instructions() = audio?.playRecordedPrompt(
-        "Tap the sample letter to hear it, then drag its match into the basket.",
-        rate = 0.9f
-    )
+    fun instructions() = audio.playActivityInstruction(ActivityInstruction.LETTER_HUNT)
     LaunchedEffect(Unit) { instructions() }
 
     fun evaluate(choiceId: Int) {
@@ -282,21 +282,18 @@ fun LetterBasketScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Drag all matching letters into the basket",
-                    style = (
-                        if (metrics.compactHeight) {
-                            MaterialTheme.typography.titleSmall
-                        } else {
-                            MaterialTheme.typography.titleMedium
-                        }
-                    ).let { baseStyle ->
+                    "Look at the letter in the basket. Find the same letter below. Put it in the basket.",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale
                         )
                     },
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = if (metrics.compactHeight) 1.dp else 4.dp)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = if (metrics.compactHeight) 1.dp else 4.dp)
                 )
                 Text(
                     "Round ${roundIndex + 1} of ${basketRounds.size} • Found $foundCount / $BASKET_TARGET_COUNT",

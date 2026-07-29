@@ -34,8 +34,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.BlendWord
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.Praise
@@ -71,14 +73,20 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
 
     val round = rounds[roundIndex]
     val choices = remember(roundIndex) {
-        val sameFirstLetter = matchWords
+        val usableDistractors = matchWords
             .filter { it.word != round.word }
+            .filterNot { it.word.isTooSimilarTo(round.word) }
+        val sameFirstLetter = matchWords
+            .filter { it in usableDistractors }
             .filter { it.word.firstOrNull() == round.word.firstOrNull() }
             .shuffled()
-        val fallback = matchWords
-            .filter { it.word != round.word && it !in sameFirstLetter }
+        val fallback = usableDistractors
+            .filter { it !in sameFirstLetter }
             .shuffled()
-        val distractors = (sameFirstLetter.take(2) + fallback)
+        val emergencyFallback = matchWords
+            .filter { it.word != round.word && it !in sameFirstLetter && it !in fallback }
+            .shuffled()
+        val distractors = (sameFirstLetter.take(2) + fallback + emergencyFallback)
             .distinctBy { it.word }
             .take(2)
         (distractors + round).shuffled()
@@ -93,7 +101,7 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
         roundLocked = false
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio?.playRecordedPrompt("Tap the matching word!") {
+            audio.playActivityInstruction(ActivityInstruction.BLENDING_MATCH) {
                 speakPrompt()
             }
             return@LaunchedEffect
@@ -152,7 +160,11 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
     ActivityScaffold(
         title = "Blending Match",
         onBack = onBack,
-        onReplayInstructions = { speakPrompt() },
+        onReplayInstructions = {
+            audio.playActivityInstruction(ActivityInstruction.BLENDING_MATCH) {
+                speakPrompt()
+            }
+        },
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
@@ -188,8 +200,8 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                     }
                 )
                 Text(
-                    "Look at the picture, then tap the matching word",
-                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                    "Click the picture. Listen to the word. Match the word below.",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale
@@ -252,6 +264,16 @@ private fun choiceState(word: String, correctWord: String?, wrongWord: String?):
     correctWord -> ChoiceState.CORRECT
     wrongWord -> ChoiceState.WRONG
     else -> ChoiceState.IDLE
+}
+
+private fun String.isTooSimilarTo(other: String): Boolean {
+    val firstAndLastMatch = length == other.length &&
+        firstOrNull() == other.firstOrNull() &&
+        lastOrNull() == other.lastOrNull()
+    val oneLetterDifferent = length == other.length &&
+        zip(other).count { (a, b) -> a != b } <= 1
+
+    return firstAndLastMatch || oneLetterDifferent
 }
 
 private fun AudioManager?.playBlendWord(

@@ -27,8 +27,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.BlendWord
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.Praise
@@ -81,7 +83,7 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
         correctWord = null
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio?.playRecordedPrompt("Listen to the sounds blend them!") {
+            audio.playActivityInstruction(ActivityInstruction.BLEND_AND_READ) {
                 speakPrompt()
             }
             return@LaunchedEffect
@@ -140,7 +142,11 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     ActivityScaffold(
         title = "Blend and Read",
         onBack = onBack,
-        onReplayInstructions = { speakPrompt() },
+        onReplayInstructions = {
+            audio.playActivityInstruction(ActivityInstruction.BLEND_AND_READ) {
+                speakPrompt()
+            }
+        },
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
@@ -171,8 +177,8 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                     }
                 )
                 Text(
-                    "Tap each letter sound, blend the word, then choose the correct picture",
-                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                    "Click each letter. Say the sounds. Blend and read the word. Click the correct picture.",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale

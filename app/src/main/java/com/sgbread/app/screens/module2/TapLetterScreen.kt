@@ -32,8 +32,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.Praise
 import com.sgbread.app.ui.components.ActivityCompleteOverlay
@@ -92,7 +94,7 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
         roundLocked = false
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio?.playRecordedPrompt("What letter does this picture begin with?") {
+            audio.playActivityInstruction(ActivityInstruction.PHONICS_MATCH) {
                 speakPrompt()
             }
             return@LaunchedEffect
@@ -148,7 +150,11 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     ActivityScaffold(
         title = "Phonics Match",
         onBack = onBack,
-        onReplayInstructions = { speakPrompt() },
+        onReplayInstructions = {
+            audio.playActivityInstruction(ActivityInstruction.PHONICS_MATCH) {
+                speakPrompt()
+            }
+        },
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
@@ -184,8 +190,8 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                     }
                 )
                 Text(
-                    "Click the first Letter of this Picture",
-                    style = MaterialTheme.typography.headlineSmall.let { baseStyle ->
+                    "Click the picture and listen, then find the first letter.",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale

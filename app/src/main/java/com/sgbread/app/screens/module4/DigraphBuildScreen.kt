@@ -36,8 +36,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.PatternWord
 import com.sgbread.app.data.Praise
@@ -79,6 +81,7 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
     var roundLocked by remember { mutableStateOf(false) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
+    var hasIntroduced by remember { mutableStateOf(false) }
 
     val round = rounds[roundIndex]
     val patternChoices = remember(roundIndex) {
@@ -95,6 +98,13 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
         wrongPattern = null
         correctPattern = null
         roundLocked = false
+        if (!hasIntroduced) {
+            hasIntroduced = true
+            audio.playActivityInstruction(ActivityInstruction.DIGRAPH_SOUND) {
+                speakPicture()
+            }
+            return@LaunchedEffect
+        }
         speakPicture()
     }
 
@@ -144,7 +154,11 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
     ActivityScaffold(
         title = "Digraph Sound",
         onBack = onBack,
-        onReplayInstructions = { speakPicture() },
+        onReplayInstructions = {
+            audio.playActivityInstruction(ActivityInstruction.DIGRAPH_SOUND) {
+                speakPicture()
+            }
+        },
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
@@ -180,8 +194,8 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
                     }
                 )
                 Text(
-                    "Tap the picture, then choose its digraph sound",
-                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                    "Click the picture. Listen to the word. Click the correct digraph sound.",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale

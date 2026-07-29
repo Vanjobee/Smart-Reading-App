@@ -31,8 +31,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.Praise
 import com.sgbread.app.ui.components.ActivityCompleteOverlay
@@ -69,6 +71,7 @@ fun ListenMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
     var roundLocked by remember { mutableStateOf(false) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
+    var hasIntroduced by remember { mutableStateOf(false) }
 
     val round = rounds[roundIndex]
     val choices = remember(roundIndex) {
@@ -80,6 +83,13 @@ fun ListenMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
         wrongPick = null
         correctPick = null
         roundLocked = false
+        if (!hasIntroduced) {
+            hasIntroduced = true
+            audio.playActivityInstruction(ActivityInstruction.PHONICS_SOUNDS) {
+                speakPrompt()
+            }
+            return@LaunchedEffect
+        }
         speakPrompt()
     }
 
@@ -129,9 +139,13 @@ fun ListenMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
     }
 
     ActivityScaffold(
-        title = "Phonics Sound",
+        title = "Phonics Sounds",
         onBack = onBack,
-        onReplayInstructions = { speakPrompt() },
+        onReplayInstructions = {
+            audio.playActivityInstruction(ActivityInstruction.PHONICS_SOUNDS) {
+                speakPrompt()
+            }
+        },
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
@@ -167,14 +181,8 @@ fun ListenMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                     }
                 )
                 Text(
-                    "Listen to the phonics sound, then choose its picture",
-                    style = (
-                        if (metrics.compactHeight) {
-                            MaterialTheme.typography.headlineSmall
-                        } else {
-                            MaterialTheme.typography.headlineMedium
-                        }
-                    ).let { baseStyle ->
+                    "Click the letter and listen to the sound. Choose and click the matching picture.",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale

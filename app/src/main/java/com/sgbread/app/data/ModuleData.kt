@@ -23,9 +23,9 @@ object Modules {
         title = "Letter Recognition",
         icon = FarmIconKey.SPROUT_SEED,
         activities = listOf(
-            ActivityInfo("m1a1", "Trace the Letter", "Trace uppercase and lowercase letter pairs", "trace_letter"),
-            ActivityInfo("m1a2", "Letter Basket", "Drag letters into the matching basket", "letter_basket"),
-            ActivityInfo("m1a3", "Match Upper & Lowercase", "Match letter pairs and meet a farm word", "match_case")
+            ActivityInfo("m1a1", "Letter Trace", "Trace each letter carefully. Stay on the line as you trace. Say the letter's name aloud as you trace.", "trace_letter"),
+            ActivityInfo("m1a2", "Letter Hunt", "Look at the letter in the basket. Find the same letter below. Put it in the basket.", "letter_basket"),
+            ActivityInfo("m1a3", "Letter Match", "Find the same letter. Draw a line to connect them.", "match_case")
         )
     )
 
@@ -35,9 +35,9 @@ object Modules {
         title = "Phonics",
         icon = FarmIconKey.SPROUT_SPROUT,
         activities = listOf(
-            ActivityInfo("m2a1", "Phonics Match", "Listen to the phonics sound and choose its picture", "listen_match"),
-            ActivityInfo("m2a2", "Tap the Letter", "See a picture, tap its beginning sound", "tap_letter"),
-            ActivityInfo("m2a3", "Phonics Hunt", "Find uppercase and lowercase letters by sound", "letter_hunt")
+            ActivityInfo("m2a1", "Phonics Sounds", "Click the letter and listen to the sound. Choose and click the matching picture.", "listen_match"),
+            ActivityInfo("m2a2", "Phonics Match", "Click the picture and listen, then find the first letter.", "tap_letter"),
+            ActivityInfo("m2a3", "Phonics Hunt", "Click the 🔊 speaker icon in the upper right corner of your gadget. Listen to the sound. Click the matching letter.", "letter_hunt")
         )
     )
 
@@ -47,9 +47,9 @@ object Modules {
         title = "Blending",
         icon = FarmIconKey.SPROUT_GROWING,
         activities = listOf(
-            ActivityInfo("m3a2", "Supply the Missing Letter", "Complete the missing letter", "missing_letter"),
-            ActivityInfo("m3a3", "Blend and Read", "Listen, blend the sounds, choose the word", "blend_read"),
-            ActivityInfo("m3a4", "Blending Match", "Match the picture to the blended word", "blending_match")
+            ActivityInfo("m3a2", "Fill in the Letter", "Click the picture. Listen to the word. Find the missing letter to complete the word.", "missing_letter"),
+            ActivityInfo("m3a3", "Blend and Read", "Click each letter. Say the sounds. Blend and read the word. Click the correct picture.", "blend_read"),
+            ActivityInfo("m3a4", "Blending Match", "Click the picture. Listen to the word. Match the word below.", "blending_match")
         )
     )
 
@@ -59,9 +59,9 @@ object Modules {
         title = "Consonant & Vowel Digraphs",
         icon = FarmIconKey.SPROUT_FLOWERING,
         activities = listOf(
-            ActivityInfo("m4a1", "Digraph Sound", "Choose the digraph sound that matches the picture", "digraph_build"),
-            ActivityInfo("m4a2", "Picture-to-Word Match", "Tap the picture, choose the spelling", "picture_word_match"),
-            ActivityInfo("m4a3", "Digraph Hunt", "Find words with the target digraph", "digraph_hunt")
+            ActivityInfo("m4a1", "Digraph Sound", "Click the picture. Listen to the word. Click the correct digraph sound.", "digraph_build"),
+            ActivityInfo("m4a2", "Digraph Match", "Click the picture. Listen to the digraph sound. Match the correct word.", "picture_word_match"),
+            ActivityInfo("m4a3", "Digraph Hunt", "Click and listen to the word with a digraph sound. Match the digraph sound. Click the picture.", "digraph_hunt")
         )
     )
 

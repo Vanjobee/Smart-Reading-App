@@ -44,12 +44,15 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.sgbread.app.R
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.FarmIconKey
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.PhonicsItem
@@ -89,7 +92,7 @@ private data class TraceLetterItem(
 private fun PhonicsItem.toTraceLetterItem(): TraceLetterItem =
     when {
         letter == 'G' && word == "goat" -> TraceLetterItem(letter = 'G', word = "grass", image = R.drawable.grass)
-        letter == 'R' && word == "rice" -> TraceLetterItem(letter = 'R', word = "rat", icon = FarmIconKey.RAT)
+        letter == 'R' && word == "rice" -> TraceLetterItem(letter = 'R', word = "rat", image = R.drawable.blend_rat)
         else -> TraceLetterItem(letter = letter, word = word, image = image)
     }
 
@@ -186,8 +189,8 @@ fun TraceLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
         completionAudioFinished = false
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio?.playRecordedPrompt("Trace Letter!") {
-                audio.playLetterName(item.letter)
+            audio.playActivityInstruction(ActivityInstruction.LETTER_TRACE) {
+                audio?.playLetterName(item.letter)
             }
             return@LaunchedEffect
         }
@@ -213,7 +216,11 @@ fun TraceLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
     ActivityScaffold(
         title = "Letter Trace",
         onBack = onBack,
-        onReplayInstructions = { speakCurrent() },
+        onReplayInstructions = {
+            audio.playActivityInstruction(ActivityInstruction.LETTER_TRACE) {
+                speakCurrent()
+            }
+        },
         audio = audio,
         blockInputDuringAudio = false,
         titleTextScale = responsiveTextScale,
@@ -233,20 +240,18 @@ fun TraceLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                 verticalPadding = if (metrics.compactHeight) 2.dp else 8.dp
             ) {
                 Text(
-                    "Letter ${stepIndex + 1} of ${traceLetters.size} — trace $glyph",
-                    style = (
-                        if (metrics.compactHeight) {
-                            MaterialTheme.typography.labelMedium
-                        } else {
-                            MaterialTheme.typography.bodyMedium
-                        }
-                    ).let { baseStyle ->
+                    "Trace each letter carefully. Stay on the line as you trace. Say the letter's name aloud as you trace.",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale
                         )
                     },
-                    modifier = Modifier.padding(bottom = 0.dp)
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 0.dp)
                 )
                 Box(
                     modifier = Modifier

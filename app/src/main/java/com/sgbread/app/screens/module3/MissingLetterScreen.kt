@@ -40,8 +40,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.BlendWord
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.Praise
@@ -103,7 +105,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
         filledLetter = null
         if (!hasIntroduced) {
             hasIntroduced = true
-            audio?.playRecordedPrompt("Which letter is missing?") {
+            audio.playActivityInstruction(ActivityInstruction.FILL_IN_THE_LETTER) {
                 speakPrompt()
             }
             return@LaunchedEffect
@@ -146,7 +148,11 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
     ActivityScaffold(
         title = "Fill in the Letter",
         onBack = onBack,
-        onReplayInstructions = { speakPrompt() },
+        onReplayInstructions = {
+            audio.playActivityInstruction(ActivityInstruction.FILL_IN_THE_LETTER) {
+                speakPrompt()
+            }
+        },
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
@@ -183,8 +189,8 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                     modifier = Modifier.padding(bottom = metrics.gridSpacing)
                 )
                 Text(
-                    "Place the letter in the box to complete the word.",
-                    style = MaterialTheme.typography.titleLarge.let { baseStyle ->
+                    "Click the picture. Listen to the word. Find the missing letter to complete the word.",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale

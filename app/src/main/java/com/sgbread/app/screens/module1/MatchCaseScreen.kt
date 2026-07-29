@@ -32,11 +32,14 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sgbread.app.audio.ActivityInstruction
 import com.sgbread.app.audio.AudioManager
 import com.sgbread.app.audio.Sfx
+import com.sgbread.app.audio.playActivityInstruction
 import com.sgbread.app.data.LettersBank
 import com.sgbread.app.data.Praise
 import com.sgbread.app.data.PhonicsItem
@@ -100,10 +103,7 @@ fun MatchCaseScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     val chipPositions = remember { mutableMapOf<String, Offset>() }
     var containerCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
-    fun instructions() = audio?.playRecordedPrompt(
-        "Drag a line from each capital letter to its lowercase pair.",
-        rate = 0.9f
-    )
+    fun instructions() = audio.playActivityInstruction(ActivityInstruction.LETTER_MATCH)
     LaunchedEffect(Unit) { instructions() }
 
     fun evaluate(upper: Char, lower: Char) {
@@ -197,21 +197,18 @@ fun MatchCaseScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Draw a line to connect each letter pair",
-                    style = (
-                        if (metrics.compactHeight) {
-                            MaterialTheme.typography.titleSmall
-                        } else {
-                            MaterialTheme.typography.titleMedium
-                        }
-                    ).let { baseStyle ->
+                    "Find the same letter. Draw a line to connect them.",
+                    style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
                             fontSize = baseStyle.fontSize * responsiveTextScale
                         )
                     },
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = if (metrics.compactHeight) 1.dp else 4.dp)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = if (metrics.compactHeight) 1.dp else 4.dp)
                 )
                 Text(
                     "Round ${roundIndex + 1} of ${rounds.size}",
