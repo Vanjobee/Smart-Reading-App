@@ -223,6 +223,7 @@ fun TraceLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
         },
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !letterPopupVisible && !completionAudioFinished,
         titleTextScale = responsiveTextScale,
         confirmOnBack = stepIndex > 0 || strokes.isNotEmpty() || currentStroke.isNotEmpty()
     ) { padding ->
@@ -240,7 +241,7 @@ fun TraceLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                 verticalPadding = if (metrics.compactHeight) 2.dp else 8.dp
             ) {
                 Text(
-                    "Trace each letter carefully. Stay on the line as you trace. Say the letter's name aloud as you trace.",
+                    "Trace each letter carefully. Stay on the line and say the letter name aloud.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,

@@ -159,6 +159,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !roundLocked,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || pendingPraise || feedback is AnswerFeedback.Correct
     ) { padding ->
@@ -191,7 +192,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
                     }
                 )
                 Text(
-                    "Click the picture. Listen to the digraph sound. Match the correct word.",
+                    "Click the picture and listen to the digraph sound. Match it to the correct word.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
@@ -214,7 +215,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
                                 contentDescription = round.word,
                                 modifier = Modifier
                                     .size(metrics.largePictureSize * responsiveImageScale)
-                                    .clickable {
+                                    .clickable(enabled = !roundLocked) {
                                         audio?.stopPlayback()
                                         speakWord()
                                     },
@@ -225,7 +226,7 @@ fun PictureWordMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack:
                                 round.icon,
                                 modifier = Modifier
                                     .size(metrics.largePictureSize * responsiveImageScale)
-                                    .clickable {
+                                    .clickable(enabled = !roundLocked) {
                                         audio?.stopPlayback()
                                         speakWord()
                                     }

@@ -149,6 +149,7 @@ fun ListenMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !roundLocked,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || correctPick != null
     ) { padding ->
@@ -181,7 +182,7 @@ fun ListenMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                     }
                 )
                 Text(
-                    "Click the letter and listen to the sound. Choose and click the matching picture.",
+                    "Click the letter, listen to the sound, then choose the matching picture.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
@@ -203,7 +204,7 @@ fun ListenMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                                 .size((if (metrics.compactHeight) 100.dp else 130.dp) * M2_SCALE)
                                 .background(CreamWhite, RoundedCornerShape(28.dp))
                                 .border(4.dp, RiceGreenDark, RoundedCornerShape(28.dp))
-                                .clickable {
+                                .clickable(enabled = !roundLocked) {
                                     audio?.stopPlayback()
                                     audio?.playLetterSound(round.letter)
                                 },

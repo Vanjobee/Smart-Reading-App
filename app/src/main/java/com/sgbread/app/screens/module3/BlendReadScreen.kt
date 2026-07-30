@@ -60,6 +60,7 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongWord by remember { mutableStateOf<String?>(null) }
     var correctWord by remember { mutableStateOf<String?>(null) }
+    var roundLocked by remember { mutableStateOf(false) }
     var pendingPraise by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
@@ -81,6 +82,7 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     LaunchedEffect(roundIndex) {
         wrongWord = null
         correctWord = null
+        roundLocked = false
         if (!hasIntroduced) {
             hasIntroduced = true
             audio.playActivityInstruction(ActivityInstruction.BLEND_AND_READ) {
@@ -92,12 +94,14 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     }
 
     fun onPick(choice: BlendWord) {
+        if (roundLocked) return
         // Every card speaks its own word on tap, whether or not it's the right answer --
         // lets the child explore/hear all the choices, not just the one they land on.
         audio?.stopPlayback()
         if (choice.word == round.word) {
             wrongWord = null
             correctWord = choice.word
+            roundLocked = true
             audio.playBlendWord(choice, rate = 0.9f) {
                 pendingPraise = true
             }
@@ -150,6 +154,7 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !roundLocked,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || correctWord != null
     ) { padding ->
@@ -177,7 +182,7 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                     }
                 )
                 Text(
-                    "Click each letter. Say the sounds. Blend and read the word. Click the correct picture.",
+                    "Click each letter sound, blend and read the word, then choose the correct picture.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
@@ -202,6 +207,7 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                                 LetterChip(
                                     letter = c.uppercaseChar(),
                                     size = metrics.chipSize,
+                                    enabled = !roundLocked,
                                     onClick = {
                                         audio?.stopPlayback()
                                         audio?.playLetterSound(c)
@@ -238,6 +244,7 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                                         wrongWord -> ChoiceState.WRONG
                                         else -> ChoiceState.IDLE
                                     },
+                                    enabled = !roundLocked,
                                     onClick = { onPick(choice) },
                                     modifier = Modifier.weight(1f)
                                 )

@@ -210,6 +210,7 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !inputLocked,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || (inputLocked && wrongWord == null)
     ) { padding ->
@@ -231,7 +232,7 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                     }
                 )
                 Text(
-                    "Click and listen to the word with a digraph sound. Match the digraph sound. Click the picture.",
+                    "Click and listen to the word with a digraph sound, then choose the matching picture.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
@@ -254,7 +255,7 @@ fun DigraphHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
                                 .fillMaxWidth(0.66f)
                                 .background(CreamWhite, RoundedCornerShape(22.dp))
                                 .border(4.dp, RiceGreenDark, RoundedCornerShape(22.dp))
-                                .clickable {
+                                .clickable(enabled = !inputLocked) {
                                     audio?.stopPlayback()
                                     speakPrompt()
                                 }

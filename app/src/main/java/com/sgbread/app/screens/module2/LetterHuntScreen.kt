@@ -238,7 +238,7 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
-        replayInstructionsEnabled = !introImageVisible,
+        replayInstructionsEnabled = !introImageVisible && !inputLocked,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || foundCount > 0
     ) { padding ->
@@ -280,7 +280,7 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
                     }
                 )
                 Text(
-                    "Click the 🔊 speaker icon in the upper right corner of your gadget. Listen to the sound. Click the matching letter. ($foundCount / $TARGET_COUNT)",
+                    "Click the 🔊 speaker icon, listen to the sound, then click the matching letter. ($foundCount / $TARGET_COUNT)",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,

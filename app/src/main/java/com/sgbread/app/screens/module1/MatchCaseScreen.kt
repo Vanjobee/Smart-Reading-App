@@ -170,6 +170,7 @@ fun MatchCaseScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !lockInput,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || matched.isNotEmpty()
     ) { padding ->
@@ -197,7 +198,7 @@ fun MatchCaseScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Find the same letter. Draw a line to connect them.",
+                    "Find the same letter and draw a line to connect them.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,

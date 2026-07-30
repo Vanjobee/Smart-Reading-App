@@ -76,6 +76,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
     var wrongLetter by remember { mutableStateOf<Char?>(null) }
     var filledLetter by remember { mutableStateOf<Char?>(null) }
+    var roundLocked by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
 
     var draggingLetter by remember { mutableStateOf<Char?>(null) }
@@ -103,6 +104,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
     LaunchedEffect(roundIndex) {
         wrongLetter = null
         filledLetter = null
+        roundLocked = false
         if (!hasIntroduced) {
             hasIntroduced = true
             audio.playActivityInstruction(ActivityInstruction.FILL_IN_THE_LETTER) {
@@ -114,9 +116,11 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
     }
 
     fun onPick(letter: Char) {
+        if (roundLocked) return
         if (letter == missingLetter) {
             wrongLetter = null
             filledLetter = letter
+            roundLocked = true
             audio?.playSfx(Sfx.CORRECT)
             feedback = AnswerFeedback.Correct(Praise.randomCorrect())
         } else {
@@ -156,6 +160,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !roundLocked,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || filledLetter != null
     ) { padding ->
@@ -189,7 +194,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                     modifier = Modifier.padding(bottom = metrics.gridSpacing)
                 )
                 Text(
-                    "Click the picture. Listen to the word. Find the missing letter to complete the word.",
+                    "Click the picture and listen to the word. Find the missing letter to complete it.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
@@ -214,7 +219,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                             val hitRadius = maxOf(DROP_HIT_RADIUS_DP.dp.toPx(), metrics.chipSize.toPx() * 0.85f)
                             detectDragGestures(
                                 onDragStart = { offset ->
-                                    if (filledLetter != null) return@detectDragGestures
+                                    if (roundLocked || filledLetter != null) return@detectDragGestures
                                     val nearest = chipPositions.entries.minByOrNull { (_, pos) -> (pos - offset).getDistance() }
                                     if (nearest != null && (nearest.value - offset).getDistance() < hitRadius) {
                                         audio?.stopPlayback()
@@ -264,7 +269,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                                     modifier = Modifier
                                         .size(metrics.largePictureSize * responsiveImageScale)
                                         .padding(bottom = metrics.spacing)
-                                        .clickable {
+                                        .clickable(enabled = !roundLocked) {
                                             audio?.stopPlayback()
                                             audio.playBlendWord(round, rate = 0.9f)
                                         },
@@ -276,7 +281,7 @@ fun MissingLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                                     modifier = Modifier
                                         .size(metrics.largePictureSize * responsiveImageScale)
                                         .padding(bottom = metrics.spacing)
-                                        .clickable {
+                                        .clickable(enabled = !roundLocked) {
                                             audio?.stopPlayback()
                                             audio.playBlendWord(round, rate = 0.9f)
                                         }

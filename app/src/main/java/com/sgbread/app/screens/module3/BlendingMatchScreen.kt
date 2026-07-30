@@ -168,6 +168,7 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !roundLocked,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || correctWord != null
     ) { padding ->
@@ -200,7 +201,7 @@ fun BlendingMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: ()
                     }
                 )
                 Text(
-                    "Click the picture. Listen to the word. Match the word below.",
+                    "Click the picture and listen to the word. Match it to the correct word below.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,

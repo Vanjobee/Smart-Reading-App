@@ -158,6 +158,7 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !roundLocked,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || correctLetter != null
     ) { padding ->
@@ -190,7 +191,7 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                     }
                 )
                 Text(
-                    "Click the picture and listen, then find the first letter.",
+                    "Click the picture and listen. Then find the first letter.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
@@ -212,7 +213,7 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
                             contentDescription = round.word,
                             modifier = Modifier
                                 .size(metrics.largePictureSize * M2_SCALE * responsiveImageScale)
-                                .clickable {
+                                .clickable(enabled = !roundLocked) {
                                     audio?.stopPlayback()
                                     audio?.playWord(round.word, rate = 0.9f)
                                 },

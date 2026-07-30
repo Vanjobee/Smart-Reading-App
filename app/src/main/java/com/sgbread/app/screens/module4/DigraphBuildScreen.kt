@@ -162,6 +162,7 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !roundLocked,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || correctPattern != null
     ) { padding ->
@@ -194,7 +195,7 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
                     }
                 )
                 Text(
-                    "Click the picture. Listen to the word. Click the correct digraph sound.",
+                    "Click the picture and listen to the word. Choose the correct digraph sound.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
@@ -218,6 +219,7 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
                     DigraphPictureCard(
                         word = round,
                         imageSize = metrics.largePictureSize * responsiveImageScale,
+                        enabled = !roundLocked,
                         onClick = {
                             audio?.stopPlayback()
                             speakPicture()
@@ -255,6 +257,7 @@ fun DigraphBuildScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
 private fun DigraphPictureCard(
     word: PatternWord,
     imageSize: androidx.compose.ui.unit.Dp,
+    enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -263,7 +266,7 @@ private fun DigraphPictureCard(
             .shadow(8.dp, RoundedCornerShape(30.dp))
             .background(CreamWhite.copy(alpha = 0.96f), RoundedCornerShape(30.dp))
             .border(4.dp, RiceGreenDark.copy(alpha = 0.7f), RoundedCornerShape(30.dp))
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(18.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

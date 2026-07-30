@@ -259,6 +259,7 @@ fun LetterBasketScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
         feedback = feedback,
         audio = audio,
         blockInputDuringAudio = false,
+        replayInstructionsEnabled = !lockInput,
         titleTextScale = responsiveTextScale,
         confirmOnBack = roundIndex > 0 || foundCount > 0
     ) { padding ->
@@ -282,7 +283,7 @@ fun LetterBasketScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () 
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Look at the letter in the basket. Find the same letter below. Put it in the basket.",
+                    "Look at the letter in the basket, then find the same letter below and put it in the basket.",
                     style = MaterialTheme.typography.titleMedium.let { baseStyle ->
                         baseStyle.copy(
                             color = CreamWhite,
