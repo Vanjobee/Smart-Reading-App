@@ -11,7 +11,8 @@ private val DIGRAPH_SOUND_AUDIO = mapOf(
     "CK" to R.raw.digraph_sound_ck,
     "NG" to R.raw.digraph_sound_ng,
     "PH" to R.raw.digraph_sound_ph,
-    "TH" to R.raw.digraph_sound_th
+    "TH" to R.raw.digraph_sound_th,
+    "WH" to R.raw.digraph_sound_wh
 )
 
 internal fun AudioManager?.playPatternWord(
