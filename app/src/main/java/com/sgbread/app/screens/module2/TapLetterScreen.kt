@@ -62,7 +62,10 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
     val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
 
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val tapItems = remember { LettersBank.phonicsItems.filter { it.word !in TAP_LETTER_EXCLUDED_WORDS } }
+    val tapItems = remember {
+        LettersBank.randomizedPhonicsActivityItems()
+            .filter { it.word !in TAP_LETTER_EXCLUDED_WORDS }
+    }
     val rounds = remember { tapItems.shuffled().take(10) }
     var roundIndex by remember { mutableIntStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }
@@ -74,7 +77,7 @@ fun TapLetterScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
 
     val round = rounds[roundIndex]
     val choices = remember(roundIndex) {
-        (listOf(round.letter) + LettersBank.phonicsItems
+        (listOf(round.letter) + tapItems
             .map { it.letter }
             .filter { it != round.letter }
             .filter { letter -> tapItems.any { it.letter == letter } }

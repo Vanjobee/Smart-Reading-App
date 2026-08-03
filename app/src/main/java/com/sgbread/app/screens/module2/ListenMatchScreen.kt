@@ -62,7 +62,10 @@ fun ListenMatchScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -
     val responsiveTextScale = (screenWidthDp / 360f).coerceIn(1f, 1.25f)
 
     // Freshly shuffled each time the screen is entered, not just once per app launch.
-    val matchItems = remember { LettersBank.phonicsItems.filter { it.word !in LISTEN_MATCH_EXCLUDED_WORDS } }
+    val matchItems = remember {
+        LettersBank.randomizedPhonicsActivityItems()
+            .filter { it.word !in LISTEN_MATCH_EXCLUDED_WORDS }
+    }
     val rounds = remember { matchItems.shuffled().take(10) }
     var roundIndex by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var feedback by remember { mutableStateOf<AnswerFeedback>(AnswerFeedback.None) }

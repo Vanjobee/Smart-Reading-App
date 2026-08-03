@@ -132,7 +132,10 @@ fun LetterHuntScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () ->
 
     // Freshly shuffled each time the screen is entered, not just once per app launch.
     val huntRounds = remember {
-        LettersBank.phonicsItems.filter { it.word !in PHONICS_HUNT_EXCLUDED_WORDS }.shuffled().take(10)
+        LettersBank.randomizedPhonicsActivityItems()
+            .filter { it.word !in PHONICS_HUNT_EXCLUDED_WORDS }
+            .shuffled()
+            .take(10)
     }
     var roundIndex by remember { mutableStateOf(0) }
     var letters by remember(roundIndex) { mutableStateOf(buildLetters(huntRounds[roundIndex].letter)) }

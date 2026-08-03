@@ -66,7 +66,16 @@ fun BlendReadScreen(audio: AudioManager?, onComplete: () -> Unit, onBack: () -> 
 
     val round = rounds[roundIndex]
     val choices = remember(roundIndex) {
-        (listOf(round) + blendItems.filter { it.word != round.word }.shuffled().take(1)).shuffled()
+        val blockedTogether = when (round.word) {
+            "jam" -> setOf("red")
+            "red" -> setOf("jam")
+            else -> emptySet()
+        }
+        (listOf(round) + blendItems
+            .filter { it.word != round.word && it.word !in blockedTogether }
+            .shuffled()
+            .take(1))
+            .shuffled()
     }
 
     fun speakPrompt() {

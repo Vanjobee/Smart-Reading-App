@@ -53,6 +53,16 @@ object LettersBank {
         PhonicsItem('Z', "zebra", R.drawable.zebra)
     )
 
+    private val phonicsOnlyAlternateItems: List<PhonicsItem> = listOf(
+        PhonicsItem('U', "umbrella", R.drawable.phonics_umbrella)
+    )
+
+    fun randomizedPhonicsActivityItems(): List<PhonicsItem> =
+        (phonicsItems + phonicsOnlyAlternateItems)
+            .groupBy { it.letter }
+            .values
+            .map { variants -> variants.random() }
+
     val blendWords: List<BlendWord> = listOf(
         BlendWord("barn", image = R.drawable.blend_barn, audio = R.raw.blend_barn),
         BlendWord("bird", image = R.drawable.blend_bird, audio = R.raw.blend_bird),
